@@ -78,7 +78,7 @@ public class Container extends RecyclerView {
 
   private static final String TAG = "ToroLib:Container";
 
-  final PlayerManager playerManager = new PlayerManager();  // never null
+  /* package */ final PlayerManager playerManager = new PlayerManager();  // never null
   /* package */ PlayerSelector playerSelector = PlayerSelector.DEFAULT;  // null = do nothing
   /* package */ Handler animatorFinishHandler;  // null = Container is detached ...
 
@@ -133,7 +133,7 @@ public class Container extends RecyclerView {
    * @param filter the {@link Filter} to a {@link ToroPlayer}.
    * @return list of players accepted by {@link Filter}. Empty list if there is no available player.
    */
-  @NonNull public List<ToroPlayer> filterBy(Filter filter) {
+  @NonNull public final List<ToroPlayer> filterBy(Filter filter) {
     List<ToroPlayer> result = new ArrayList<>();
     for (ToroPlayer player : playerManager.getPlayers()) {
       if (filter.accept(player)) result.add(player);
@@ -291,7 +291,7 @@ public class Container extends RecyclerView {
     }
 
     for (ToroPlayer player : playerManager.getPlayers()) {
-      player.onContainerScrollStateChange(this, state);
+      player.onSettled(this);
     }
   }
 
@@ -364,7 +364,7 @@ public class Container extends RecyclerView {
    * See {@link Adapter#registerAdapterDataObserver(AdapterDataObserver)}
    * See {@link Adapter#unregisterAdapterDataObserver(AdapterDataObserver)}
    */
-  @Override public void setAdapter(Adapter adapter) {
+  @CallSuper @Override public void setAdapter(Adapter adapter) {
     Adapter oldAdapter = super.getAdapter();
     if (oldAdapter != null && oldAdapter instanceof AdapterWrapper) {
       ((AdapterWrapper) oldAdapter).unregister();
@@ -383,7 +383,7 @@ public class Container extends RecyclerView {
    *
    * See {@link Container#setAdapter(Adapter)}
    */
-  @Override public void swapAdapter(Adapter adapter, boolean removeAndRecycleExistingViews) {
+  @CallSuper @Override public void swapAdapter(Adapter adapter, boolean removeAndRecycleExistingViews) {
     Adapter oldAdapter = super.getAdapter();
     if (oldAdapter != null && oldAdapter instanceof AdapterWrapper) {
       ((AdapterWrapper) oldAdapter).unregister();
@@ -402,7 +402,7 @@ public class Container extends RecyclerView {
    *
    * If we have wrapper the original {@link Adapter}, we unwrap it here and return the original one.
    */
-  @Override public Adapter getAdapter() {
+  @CallSuper @Override public Adapter getAdapter() {
     Adapter adapter = super.getAdapter();
     return adapter != null && adapter instanceof AdapterWrapper ? //
         ((AdapterWrapper) adapter).origin : adapter;
@@ -418,8 +418,9 @@ public class Container extends RecyclerView {
    * @param order order of the {@link ToroPlayer}.
    * @param playbackInfo current {@link PlaybackInfo} of the {@link ToroPlayer}.
    */
-  public void savePlaybackInfo(int order, @NonNull PlaybackInfo playbackInfo) {
+  public final void savePlaybackInfo(int order, @NonNull PlaybackInfo playbackInfo) {
     if (cacheManager == null || order < 0) return;
+    if (playbackInfo == null) throw new IllegalArgumentException("Playback Info is null.");
     Object key = cacheManager.getKeyForOrder(order);
     if (key != null) infoCache.put(key, playbackInfo);
   }
@@ -430,7 +431,7 @@ public class Container extends RecyclerView {
    * @param order order of the {@link ToroPlayer} to get the cached {@link PlaybackInfo}.
    * @return cached {@link PlaybackInfo} if available, a new one if there is no cached one.
    */
-  @NonNull public PlaybackInfo getPlaybackInfo(int order) {
+  @NonNull public final PlaybackInfo getPlaybackInfo(int order) {
     if (cacheManager == null || order < 0) return new PlaybackInfo();
 
     Object key = cacheManager.getKeyForOrder(order);
@@ -446,11 +447,12 @@ public class Container extends RecyclerView {
 
   /**
    * Get current list of {@link ToroPlayer}s' orders whose {@link PlaybackInfo} are cached.
-   * Returning an empty list will disable the save/restore of player's position.
+   * Empty list will be returned when there is no {@link CacheManager} available. In that case,
+   * playback positions will not be saved/restored.
    *
    * @return list of {@link ToroPlayer}s' orders.
    */
-  @NonNull public List<Integer> getSavedPlayerOrders() {
+  @NonNull public final List<Integer> getSavedPlayerOrders() {
     List<Integer> orders = new ArrayList<>();
     if (cacheManager == null) return orders;
     for (Object key : infoCache.keySet()) {
@@ -463,7 +465,7 @@ public class Container extends RecyclerView {
   /**
    * Set a {@link CacheManager} to this {@link Container}. A {@link CacheManager} will
    * allow this {@link Container} to save/restore {@link PlaybackInfo} on various states or life
-   * cycle events. Setting a {@code null} {@link CacheManager} will remove that ability.
+   * cycle events. Setting a {@code null} {@link CacheManager} will disable that ability.
    * {@link Container} doesn't have a non-null {@link CacheManager} by default.
    *
    * Setting this while there is a {@code non-null} {@link CacheManager} available will clear
@@ -487,18 +489,21 @@ public class Container extends RecyclerView {
   }
 
   /**
-   * Temporary save current playback infos when the App is stopped but not re-created. (For example:
-   * User press App Stack). If not {@code null} then user is back from a living-but-stopped state.
+   * Temporary save current playback infos when the App is stopped but not re-created. For example:
+   * User press App Stack. If not {@code null} then user is back from a living-but-stopped state.
    */
   SparseArray<PlaybackInfo> tmpStates = null;
 
   /**
    * {@inheritDoc}
    *
-   * In case user press "App Stack" button, this View's window will have visibility change from
-   * {@link #VISIBLE} to {@link #INVISIBLE} to {@link #GONE}. When user is back from that state,
-   * the visibility changes from {@link #GONE} to {@link #INVISIBLE} to {@link #VISIBLE}. A proper
-   * playback needs to handle this case too.
+   * In case user presses "App Stack" button, this View's window will have visibility change from
+   * {@link #VISIBLE} to {@link #INVISIBLE} to {@link #GONE} consequently. When user is back from
+   * that state, the visibility changes from {@link #GONE} to {@link #INVISIBLE} to {@link #VISIBLE}.
+   * A proper playback needs to handle this case.
+   *
+   * This behaviour is not stable between Android versions. See {@link #dispatchWindowVisibilityMayChange()}
+   * for more information.
    */
   @CallSuper @Override protected void onWindowVisibilityChanged(int visibility) {
     super.onWindowVisibilityChanged(visibility);

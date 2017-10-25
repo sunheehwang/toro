@@ -104,8 +104,8 @@ public abstract class ToroPlayerHelper {
     this.player = player;
   }
 
-  // Hook into the scroll state change event. Called by the enclosing ToroPlayer.
-  public void onContainerScrollStateChange(int newState) {
+  // Hook into the scroll state change to idle event. Called by the enclosing ToroPlayer.
+  public void onContainerSettled() {
     // Do nothing, sub class can override this.
   }
 

@@ -178,9 +178,7 @@ final class YoutubePlayerHelper extends ToroPlayerHelper implements Handler.Call
 
   int nextMsg = -1; // message 'what' to be executed after Container stops scrolling
 
-  @Override public void onContainerScrollStateChange(int newState) {
-    super.onContainerScrollStateChange(newState);
-    if (newState != RecyclerView.SCROLL_STATE_IDLE) return;
+  @Override public void onContainerSettled() {
     if (nextMsg != -1) {
       handler.sendEmptyMessageDelayed(nextMsg, MSG_DELAY);
       nextMsg = -1;
