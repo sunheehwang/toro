@@ -383,7 +383,8 @@ public class Container extends RecyclerView {
    *
    * See {@link Container#setAdapter(Adapter)}
    */
-  @CallSuper @Override public void swapAdapter(Adapter adapter, boolean removeAndRecycleExistingViews) {
+  @CallSuper @Override public void swapAdapter(Adapter adapter,
+      boolean removeAndRecycleExistingViews) {
     Adapter oldAdapter = super.getAdapter();
     if (oldAdapter != null && oldAdapter instanceof AdapterWrapper) {
       ((AdapterWrapper) oldAdapter).unregister();
@@ -480,9 +481,10 @@ public class Container extends RecyclerView {
   }
 
   /**
-   * Get current {@link CacheManager} of the {@link Container}.
+   * Get current {@link CacheManager CacheManager} of the {@link Container Container}.
    *
-   * @return current {@link CacheManager} of the {@link Container}. Can be {@code null}.
+   * @return current {@link CacheManager CacheManager} of the {@link Container Container}.
+   * Can be {@code null}.
    */
   @Nullable public final CacheManager getCacheManager() {
     return cacheManager;
@@ -497,12 +499,14 @@ public class Container extends RecyclerView {
   /**
    * {@inheritDoc}
    *
-   * In case user presses "App Stack" button, this View's window will have visibility change from
-   * {@link #VISIBLE} to {@link #INVISIBLE} to {@link #GONE} consequently. When user is back from
-   * that state, the visibility changes from {@link #GONE} to {@link #INVISIBLE} to {@link #VISIBLE}.
-   * A proper playback needs to handle this case.
+   * In case user presses "Current Apps" button, this View's window will have visibility change
+   * from {@link #VISIBLE VISIBLE} to {@link #INVISIBLE INVISIBLE} to {@link #GONE GONE}
+   * consequently. When user is back from that state, the visibility changes from {@link #GONE GONE}
+   * to {@link #INVISIBLE INVISIBLE} to {@link #VISIBLE VISIBLE}. A proper playback needs to handle
+   * this case.
    *
-   * This behaviour is not stable between Android versions. See {@link #dispatchWindowVisibilityMayChange()}
+   * This behaviour is not stable between Android versions. See {@link
+   * #dispatchWindowVisibilityMayChange()}
    * for more information.
    */
   @CallSuper @Override protected void onWindowVisibilityChanged(int visibility) {
@@ -559,8 +563,9 @@ public class Container extends RecyclerView {
    * - Container is visible in Window (partly is fine, we care about the Media player).
    * - Container is focused in Window. (so we don't screw up other component's focus).
    *
-   * In lower API (eg: 16), {@link #getWindowVisibility()} always returns {@link #VISIBLE}, which
-   * cannot tell much. We need to investigate this flag in various APIs in various Scenarios.
+   * In lower API (eg: 16), {@link #getWindowVisibility() getWindowVisibility()} always returns
+   * {@link #VISIBLE VISIBLE}, which cannot tell much. We need to investigate this flag in various
+   * APIs in various Scenarios.
    */
   private void dispatchWindowVisibilityMayChange() {
     if (screenState == SCREEN_STATE_OFF) {
@@ -579,8 +584,9 @@ public class Container extends RecyclerView {
         // Need further investigation if need.
         && hasWindowFocus()) {
       // tmpStates may be consumed already, if there is a good reason for that, so no big deal.
-      if (tmpStates != null && tmpStates.size() > 0) {
-        for (int i = 0; i < tmpStates.size(); i++) {
+      int tmpSize;
+      if (tmpStates != null && (tmpSize = tmpStates.size()) > 0) {
+        for (int i = 0; i < tmpSize; i++) {
           int order = tmpStates.keyAt(i);
           PlaybackInfo playbackInfo = tmpStates.get(order);
           this.savePlaybackInfo(order, playbackInfo);

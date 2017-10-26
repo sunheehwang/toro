@@ -44,7 +44,7 @@ public interface ToroPlayer {
    * before any rendering). {@link ExoPlayer} should call {@link ExoPlayer#prepare(MediaSource)}
    * here, and not start playback when ready.
    *
-   * @param container the RecyclerView contains this Player.
+   * @param container the Container contains this Player.
    * @param playbackInfo initialize info for the preparation.
    */
   void initialize(@NonNull Container container, @Nullable PlaybackInfo playbackInfo);

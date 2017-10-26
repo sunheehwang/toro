@@ -34,8 +34,7 @@ import java.util.LinkedHashMap;
  *         CacheManager} must provide keys which are uniquely distint by {@link
  *         Object#equals(Object)}.
  */
-
-@SuppressWarnings("unused") public interface CacheManager {
+public interface CacheManager {
 
   /**
    * Get the unique key for the {@link ToroPlayer} of a specific order. Note that this key must
