@@ -19,7 +19,8 @@ package im.ene.toro.youtube;
 import com.google.android.youtube.player.YouTubePlayerSupportFragment;
 
 /**
- * @author eneim (2017/12/07).
+ * @author eneim (2017/12/07). An extension to provide custom code on top of {@link
+ *         YouTubePlayerSupportFragment}
  */
 
 public class ToroYouTubePlayerFragment extends YouTubePlayerSupportFragment {
@@ -40,6 +41,6 @@ public class ToroYouTubePlayerFragment extends YouTubePlayerSupportFragment {
   }
 
   @Override public String toString() {
-    return "Toro:Yt:Fragment{" + "helper=" + helperKey + '}';
+    return "YouT:Fragment{" + "helper=" + helperKey + '}';
   }
 }

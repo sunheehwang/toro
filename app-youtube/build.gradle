@@ -56,7 +56,7 @@ android {
   buildToolsVersion rootProject.ext.buildToolVersion
 
   defaultConfig {
-    applicationId "im.ene.toro.youtube"
+    applicationId "${youtube_demo_app_id}"
     minSdkVersion rootProject.ext.minSupportSDKVersion
     targetSdkVersion rootProject.ext.androidVersion
     versionCode 1

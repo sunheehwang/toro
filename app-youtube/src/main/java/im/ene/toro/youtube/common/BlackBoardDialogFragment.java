@@ -16,6 +16,7 @@
 
 package im.ene.toro.youtube.common;
 
+import android.support.v7.app.AppCompatDialogFragment;
 import im.ene.toro.youtube.R;
 
 /**
@@ -25,7 +26,7 @@ import im.ene.toro.youtube.R;
  *         See {@link R.style#Toro_Theme_Board}.
  */
 
-public abstract class BlackBoardDialogFragment extends BaseDialogFragment {
+public abstract class BlackBoardDialogFragment extends AppCompatDialogFragment {
 
   @Override public int getTheme() {
     return R.style.Toro_Theme_Board;

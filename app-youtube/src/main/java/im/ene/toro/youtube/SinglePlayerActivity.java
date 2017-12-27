@@ -47,7 +47,7 @@ public class SinglePlayerActivity extends AppCompatActivity {
             boolean restored) {
           youTubePlayer = player;
           configPlayer();
-          youTubePlayer.loadVideo("6ZfuNTqbHE8");
+          youTubePlayer.loadVideo("6ZfuNTqbHE8"); // Infinity War's trailer.
         }
 
         @Override public void onInitializationFailure(YouTubePlayer.Provider provider,

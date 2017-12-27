@@ -22,3 +22,4 @@ bintray_gpg_password=empty now
 
 youtube_apikey=your-key-here
 fabric_api_key=fabric-hey-here
+youtube_demo_app_id=?your-own-app-id?

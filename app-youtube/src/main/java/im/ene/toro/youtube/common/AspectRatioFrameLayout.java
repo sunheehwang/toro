@@ -25,7 +25,8 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * @author eneim (2017/11/23). Copy from ExoPlayer source code.
+ * @author eneim (2017/11/23). Copy from ExoPlayer source code. As YouTube demo doesn't include
+ *         ExoPlayer as dependency.
  */
 
 public class AspectRatioFrameLayout extends FrameLayout {

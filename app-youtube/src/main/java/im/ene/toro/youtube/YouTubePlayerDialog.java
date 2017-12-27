@@ -24,6 +24,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentManager.FragmentLifecycleCallbacks;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -34,10 +35,10 @@ import im.ene.toro.media.PlaybackInfo;
 import im.ene.toro.youtube.common.BlackBoardDialogFragment;
 
 /**
- * @author eneim (2017/12/08).
+ * @author eneim (2017/12/08). Fullscreen dialog for YouTube player.
  */
 
-public class YouTubePlayerDialog extends BlackBoardDialogFragment {
+public final class YouTubePlayerDialog extends BlackBoardDialogFragment {
 
   public static final String TAG = "YouT:BigPlayer";
 
@@ -46,15 +47,24 @@ public class YouTubePlayerDialog extends BlackBoardDialogFragment {
   static final String ARGS_PLAYBACK_INFO = "youtube:dialog:playback_info";
   static final String ARGS_ORIENTATION = "youtube:dialog:orientation";
 
-  static class InitData {
+  // Required pieces of Data to start the Player dialog.
+  @SuppressWarnings("ConstantConditions") static class InitData {
 
+    // Original order in Adapter of the Video.
     final int adapterOrder;
+    // YouTube video Id.
     final String videoId;
+    // Playback info to start from.
     final PlaybackInfo playbackInfo;
-    final int orientation;  // Original Orientation of requested Activity
+    // Original Orientation of requested Activity. Must be the orientation of newly created Activity.
+    final int orientation;
 
     InitData(int adapterOrder, @NonNull String videoId, @NonNull PlaybackInfo playbackInfo,
         int orientation) {
+      if (adapterOrder < 0 || TextUtils.isEmpty(videoId) || playbackInfo == null) {
+        throw new IllegalArgumentException("Invalid init data for Fullscreen player.");
+      }
+
       this.adapterOrder = adapterOrder;
       this.videoId = videoId;
       this.playbackInfo = playbackInfo;
