@@ -20,6 +20,7 @@ import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import im.ene.toro.sample.common.MediaList;
 
 /**
  * @author eneim (7/1/17).
@@ -29,10 +30,14 @@ class BasicListAdapter extends RecyclerView.Adapter<BasicPlayerViewHolder> {
 
   @SuppressWarnings("MismatchedQueryAndUpdateOfCollection") //
   private MediaList mediaList = new MediaList();
+  private LayoutInflater inflater;
 
   @Override public BasicPlayerViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-    View view = LayoutInflater.from(parent.getContext())
-        .inflate(BasicPlayerViewHolder.LAYOUT_RES, parent, false);
+    if (inflater == null || inflater.getContext() != parent.getContext()) {
+      inflater = LayoutInflater.from(parent.getContext());
+    }
+
+    View view = inflater.inflate(BasicPlayerViewHolder.LAYOUT_RES, parent, false);
     return new BasicPlayerViewHolder(view);
   }
 

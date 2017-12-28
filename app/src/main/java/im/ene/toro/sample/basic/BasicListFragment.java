@@ -31,7 +31,7 @@ import im.ene.toro.widget.Container;
 import net.opacapp.multilinecollapsingtoolbar.CollapsingToolbarLayout;
 
 /**
- * @author eneim (7/1/17).
+ * @author eneim (7/1/17). Used in fragments demo.
  */
 
 public class BasicListFragment extends BaseFragment {
@@ -66,9 +66,10 @@ public class BasicListFragment extends BaseFragment {
     // FIXME Only use the following workaround when using this Fragment in ViewPager.
     if (viewPagerMode) {
       container.setPlayerSelector(null);
-      // Using TabLayout has a downside: once we click to a tab to change page, there will be no animation,
-      // which will cause our setup doesn't work well. We need a delay to make things work.
+      // Using TabLayout has a downside: once we click to a tab to change page, there will be no
+      // animation, which will cause our setup doesn't work well. We need a delay to make things work.
       handler.postDelayed(() -> {
+        //noinspection ConstantConditions
         if (container != null) container.setPlayerSelector(selector);
       }, 500);
     } else {
