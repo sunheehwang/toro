@@ -76,7 +76,7 @@ public class Container extends RecyclerView {
 
   /* package */ final PlayerManager playerManager;
   /* package */ PlayerSelector playerSelector = PlayerSelector.DEFAULT;   // null = do nothing
-  /* package */ Handler animatorFinishHandler;  // null = Container is detached ...
+  /* package */ Handler animatorFinishHandler; // null = not being attached ...
 
   public Container(Context context) {
     this(context, null);
@@ -198,9 +198,8 @@ public class Container extends RecyclerView {
 
   @CallSuper @Override public void onScrollStateChanged(int state) {
     super.onScrollStateChanged(state);
-    if (getChildCount() == 0) return;
 
-    // Need to handle the dead playback even then the Container is still scrolling/flinging.
+    // Need to handle the dead playbacks even when the Container is still scrolling/flinging.
     List<ToroPlayer> players = playerManager.getPlayers();
     // 1. Find players those are managed but not qualified to play anymore.
     for (int i = 0, size = players.size(); i < size; i++) {
@@ -214,7 +213,7 @@ public class Container extends RecyclerView {
       playerManager.detachPlayer(player);
     }
 
-    if (state != SCROLL_STATE_IDLE) return;
+    if (getChildCount() == 0 || state != SCROLL_STATE_IDLE) return;
 
     // 2. Refresh the good players list.
     LayoutManager layout = super.getLayoutManager();
@@ -291,7 +290,7 @@ public class Container extends RecyclerView {
     return playerSelector;
   }
 
-  ////// Handle update after data change animation
+  //// Handle update after data change animation
 
   long getMaxAnimationDuration() {
     ItemAnimator animator = getItemAnimator();
@@ -300,6 +299,7 @@ public class Container extends RecyclerView {
         animator.getChangeDuration());
   }
 
+  // At the end, this will trigger a call to onScrollStateChanged with SCROLL_STATE_IDLE.
   void dispatchUpdateOnAnimationFinished(boolean immediate) {
     if (getScrollState() != SCROLL_STATE_IDLE) return;
     if (animatorFinishHandler == null) return;
@@ -317,7 +317,7 @@ public class Container extends RecyclerView {
     }
   }
 
-  ////// Adapter Data Observer setup
+  //// Adapter Data Observer setup
 
   /**
    * See {@link ToroDataObserver}
@@ -347,7 +347,7 @@ public class Container extends RecyclerView {
 
   //// PlaybackInfo Cache implementation
   private CacheManager cacheManager = null; // null by default
-  private Map<Object, PlaybackInfo> infoCache = new ArrayMap<>();
+  private final Map<Object, PlaybackInfo> infoCache = new ArrayMap<>();
 
   /**
    * Save {@link PlaybackInfo} for the current {@link ToroPlayer} of a specific order.
@@ -599,7 +599,7 @@ public class Container extends RecyclerView {
   }
 
   /**
-   * Store the array of {@link PlaybackInfo} of recently cached playback. This state will be used
+   * Store the array of {@link PlaybackInfo} of recently cached playbacks. This state will be used
    * only when {@link #cacheManager} is not {@code null}. Extension of {@link Container} must
    * also have its own version of {@link SavedState} extends this {@link PlayerViewState}.
    */
@@ -656,6 +656,8 @@ public class Container extends RecyclerView {
   private final class ToroDataObserver extends AdapterDataObserver {
 
     private Adapter adapter;
+
+    ToroDataObserver() {}
 
     final void registerAdapter(Adapter adapter) {
       if (this.adapter == adapter) return;
