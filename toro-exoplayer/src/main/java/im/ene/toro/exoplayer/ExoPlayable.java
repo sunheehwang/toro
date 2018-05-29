@@ -122,15 +122,15 @@ public class ExoPlayable extends PlayableImpl {
       lastSeenTrackGroupArray = trackGroups;
       if (!(creator instanceof DefaultExoCreator)) return;
       TrackSelector selector = ((DefaultExoCreator) creator).getTrackSelector();
-      if (selector != null && selector instanceof DefaultTrackSelector) {
+      if (selector instanceof DefaultTrackSelector) {
         MappedTrackInfo trackInfo = ((DefaultTrackSelector) selector).getCurrentMappedTrackInfo();
         if (trackInfo != null) {
-          if (trackInfo.getTrackTypeRendererSupport(C.TRACK_TYPE_VIDEO)
+          if (trackInfo.getTypeSupport(C.TRACK_TYPE_VIDEO)
               == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
             onErrorMessage(toro.getString(R.string.error_unsupported_video));
           }
 
-          if (trackInfo.getTrackTypeRendererSupport(C.TRACK_TYPE_AUDIO)
+          if (trackInfo.getTypeSupport(C.TRACK_TYPE_AUDIO)
               == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
             onErrorMessage(toro.getString(R.string.error_unsupported_audio));
           }

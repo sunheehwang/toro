@@ -38,7 +38,7 @@
         android:minHeight="200dp"
         app:resize_mode="fixed_width"
         app:surface_type="surface_view"
-        app:use_controller="true"
+        app:use_controller="false"
         />
 
     <TextView

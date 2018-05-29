@@ -21,15 +21,10 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
-import com.google.android.exoplayer2.Player;
-import com.google.android.exoplayer2.SimpleExoPlayer;
-import com.google.android.exoplayer2.source.MediaSource;
 import com.google.android.exoplayer2.ui.PlayerView;
 import im.ene.toro.exoplayer.ExoCreator;
-import im.ene.toro.exoplayer.Playable;
-import im.ene.toro.exoplayer.ToroExo;
-import toro.demo.exoplayer.DemoApp;
 import toro.demo.exoplayer.R;
+import toro.v4.Toro;
 
 /**
  * @author eneim (2018/02/07).
@@ -45,18 +40,6 @@ public class CreatorDemoActivity extends AppCompatActivity {
 
   PlayerView playerView;
 
-  ExoCreator creator;
-  MediaSource mediaSource;
-  SimpleExoPlayer exoPlayer;
-
-  final Playable.EventListener listener = new Playable.DefaultEventListener() {
-    @Override public void onPlayerStateChanged(boolean playWhenReady, int playbackState) {
-      super.onPlayerStateChanged(playWhenReady, playbackState);
-      boolean active = playbackState > Player.STATE_IDLE && playbackState < Player.STATE_ENDED;
-      playerView.setKeepScreenOn(active);
-    }
-  };
-
   @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.activity_demo_creator);
@@ -64,29 +47,7 @@ public class CreatorDemoActivity extends AppCompatActivity {
     setSupportActionBar(toolbar);
 
     playerView = findViewById(R.id.playerView);
-    creator = DemoApp.Companion.getExoCreator();
-
-    exoPlayer = ToroExo.with(this).requestPlayer(creator);
-    mediaSource = creator.createMediaSource(videoUri, null);
-    exoPlayer.addListener(listener);
-    exoPlayer.prepare(mediaSource);
-    playerView.setPlayer(exoPlayer);
+    Toro.with(this).play(videoUri).tag(videoUri).into(playerView);
   }
 
-  @Override protected void onStart() {
-    super.onStart();
-    exoPlayer.setPlayWhenReady(true);
-  }
-
-  @Override protected void onStop() {
-    super.onStop();
-    exoPlayer.setPlayWhenReady(false);
-  }
-
-  @Override protected void onDestroy() {
-    super.onDestroy();
-    playerView.setPlayer(null);
-    exoPlayer.removeListener(listener);
-    ToroExo.with(this).releasePlayer(creator, exoPlayer);
-  }
 }

@@ -61,6 +61,8 @@ dependencies {
   implementation fileTree(dir: 'libs', include: ['*.jar'])
   implementation project(':toro-core')
   implementation project(':toro-exoplayer')
+  implementation project(':toro-v4')
+
   // additional dependencies.
   //noinspection GradleDependency
   implementation "com.google.android.exoplayer:exoplayer:${rootProject.ext.exoPlayer2Version}"

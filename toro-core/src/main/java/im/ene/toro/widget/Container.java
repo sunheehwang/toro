@@ -227,8 +227,8 @@ public class Container extends RecyclerView {
       // I don't expect this to be called. If this happens, make sure to note the scenario.
       Log.w(TAG, "!!Already managed: player = [" + player + "]");
       // Only if container is in idle state and player is not playing.
-      if (getScrollState() == SCROLL_STATE_IDLE && !player.isPlaying()) {
-        playerManager.play(player, playerDispatcher.getDelayToPlay(player));
+      if (getScrollState() == SCROLL_STATE_IDLE) {
+        dispatchUpdateOnAnimationFinished(false);
       }
     } else {
       child.getViewTreeObserver().addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
