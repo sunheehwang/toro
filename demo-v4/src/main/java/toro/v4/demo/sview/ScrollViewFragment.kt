@@ -36,7 +36,7 @@ class ScrollViewFragment : Fragment() {
 
   private val videoUri: Uri =
       Uri.parse(
-          "https://storage.googleapis.com/material-design/publish/material_v_12/assets/0B14F_FSUCc01SWc0N29QR3pZT2s/materialmotionhero-spec-0505.mp4")
+          "https://storage.googleapis.com/spec-host/mio-material/assets/1MvJxcu1kd5TFR6c5IBhxjLueQzSZvVQz/m2-manifesto.mp4")
 
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
       savedInstanceState: Bundle?): View? {
@@ -45,8 +45,9 @@ class ScrollViewFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    Toro.with(requireContext()).play(videoUri)
-        .tag("Player1:" + hashCode())
+    Toro.with(requireContext())
+        .play(videoUri)
+        .tag("Player:" + hashCode())
         .into(view.findViewById(R.id.playerView))
   }
 }
