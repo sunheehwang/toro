@@ -71,3 +71,6 @@
 /demo-pixabay/proguard-rules.pro
 /demo-pixabay/src/androidTest/
 /.idea/assetWizardSettings.xml
+/toro-v4/src/androidTest/
+/toro-v4/src/test/
+/toro-v4/.gitignore
