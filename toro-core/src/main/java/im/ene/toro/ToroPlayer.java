@@ -94,6 +94,11 @@ public interface ToroPlayer {
     void onVolumeChanged(@NonNull VolumeInfo volumeInfo);
   }
 
+  interface OnErrorListener {
+
+    void onError(Exception error);
+  }
+
   // Adapt from ExoPlayer.
   @Retention(RetentionPolicy.SOURCE)  //
   @IntDef({ State.STATE_IDLE, State.STATE_BUFFERING, State.STATE_READY, State.STATE_END })  //

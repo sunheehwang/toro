@@ -148,6 +148,10 @@ public interface Playable<T> {
 
   void removeOnVolumeChangeListener(@Nullable ToroPlayer.OnVolumeChangeListener listener);
 
+  void addErrorListener(@NonNull ToroPlayer.OnErrorListener listener);
+
+  void removeErrorListener(ToroPlayer.OnErrorListener listener);
+
   /**
    * Check if current Playable is playing or not.
    *
