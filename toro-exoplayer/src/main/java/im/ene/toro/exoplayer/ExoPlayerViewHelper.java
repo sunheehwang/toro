@@ -87,6 +87,13 @@ public class ExoPlayerViewHelper extends ToroPlayerHelper {
     playable.setPlayerView((PlayerView) player.getPlayerView());
   }
 
+  @Override protected void initialize(@NonNull PlaybackInfo playbackInfo, boolean startLoading) {
+    playable.setPlaybackInfo(playbackInfo);
+    playable.addEventListener(listeners);
+    playable.prepare(startLoading);
+    playable.setPlayerView((PlayerView) player.getPlayerView());
+  }
+
   @Override public void release() {
     super.release();
     playable.setPlayerView(null);
@@ -144,6 +151,14 @@ public class ExoPlayerViewHelper extends ToroPlayerHelper {
 
   @Override public void removeOnVolumeChangeListener(ToroPlayer.OnVolumeChangeListener listener) {
     this.playable.removeOnVolumeChangeListener(listener);
+  }
+
+  @Override public void addOnErrorListener(@NonNull ToroPlayer.OnErrorListener listener) {
+    this.playable.addErrorListener(listener);
+  }
+
+  @Override public void removeOnErrorListener(ToroPlayer.OnErrorListener listener) {
+    this.playable.removeErrorListener(listener);
   }
 
   // A proxy, to also hook into ToroPlayerHelper's state change event.

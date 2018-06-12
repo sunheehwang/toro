@@ -34,6 +34,7 @@ import im.ene.toro.ToroUtil;
 import im.ene.toro.helper.ToroPlayerHelper;
 import im.ene.toro.media.PlaybackInfo;
 import im.ene.toro.media.VolumeInfo;
+import java.util.HashSet;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -116,6 +117,17 @@ final class YouTubePlayerHelper extends ToroPlayerHelper implements Handler.Call
     throw new UnsupportedOperationException("YouTube helper doesn't allow to do this.");
   }
 
+  HashSet<ToroPlayer.OnErrorListener> errorListeners;
+
+  @Override public void addOnErrorListener(@NonNull ToroPlayer.OnErrorListener listener) {
+    if (errorListeners == null) errorListeners = new HashSet<>();
+    errorListeners.add(ToroUtil.checkNotNull(listener));
+  }
+
+  @Override public void removeOnErrorListener(ToroPlayer.OnErrorListener listener) {
+    if (errorListeners != null) errorListeners.remove(listener);
+  }
+
   @Override public boolean isPlaying() {
     return youTubePlayer != null;
   }
@@ -176,7 +188,14 @@ final class YouTubePlayerHelper extends ToroPlayerHelper implements Handler.Call
 
           @Override public void onInitializationFailure(Provider provider,
               YouTubeInitializationResult result) {
-            throw new RuntimeException("YouTube init error: " + result.name());
+            if (errorListeners != null && errorListeners.size() > 0) {
+              Exception error = new YoutubeException(result);
+              for (ToroPlayer.OnErrorListener listener : errorListeners) {
+                listener.onError(error);
+              }
+            } else {
+              throw new RuntimeException("YouTube init error: " + result.name());
+            }
           }
         });
         break;
@@ -220,7 +239,12 @@ final class YouTubePlayerHelper extends ToroPlayerHelper implements Handler.Call
 
     @Override public void onError(YouTubePlayer.ErrorReason reason) {
       // if (BuildConfig.DEBUG) throw new RuntimeException("YouTubePlayer Error: " + reason);
-      if (ytFragment != null && ytFragment.isAdded()) {
+      if (errorListeners != null && errorListeners.size() > 0) {
+        Exception error = new YoutubeException(reason);
+        for (ToroPlayer.OnErrorListener listener : errorListeners) {
+          listener.onError(error);
+        }
+      } else if (ytFragment != null && ytFragment.isAdded()) {
         Toast.makeText(ytFragment.requireContext(), "Error: " + reason, Toast.LENGTH_SHORT).show();
       }
     }
@@ -289,5 +313,21 @@ final class YouTubePlayerHelper extends ToroPlayerHelper implements Handler.Call
 
     @SuppressWarnings("unused") void onFullscreen(@NonNull YouTubePlayerHelper helper,
         @Nullable YouTubePlayer player, boolean fullscreen);
+  }
+
+  public static class YoutubeException extends Exception {
+    final Object errorReason;
+
+    YoutubeException(Object errorReason) {
+      this.errorReason = errorReason;
+    }
+
+    public Object getErrorReason() {
+      return errorReason;
+    }
+
+    @Override public String toString() {
+      return errorReason != null ? errorReason.toString() : "Unknown YouTube Error";
+    }
   }
 }

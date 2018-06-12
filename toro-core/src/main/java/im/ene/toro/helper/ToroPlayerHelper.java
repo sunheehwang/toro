@@ -140,13 +140,43 @@ public abstract class ToroPlayerHelper {
    * if there is no such cached information.
    *
    * @param playbackInfo the initial playback info.
+   * @deprecated use {@link #initialize(PlaybackInfo, boolean)} instead.
    */
+  @SuppressWarnings("DeprecatedIsStillUsed") @Deprecated  //
   protected abstract void initialize(@NonNull PlaybackInfo playbackInfo);
 
-  @CallSuper
+  /**
+   * Overwrite this to support auto loading resource when initializing the playback.
+   *
+   * @param playbackInfo the initial playback info
+   * @param startLoading also loading resource for playback.
+   */
+  @SuppressWarnings("unused") //
+  protected void initialize(@NonNull PlaybackInfo playbackInfo, boolean startLoading) {
+    //noinspection deprecation
+    initialize(playbackInfo);
+  }
+
+  /**
+   * @param container the {@link Container} that manages current {@link #player}.
+   * @param playbackInfo the initial playback info.
+   */
+  @CallSuper  //
   public void initialize(@NonNull Container container, @NonNull PlaybackInfo playbackInfo) {
+    this.initialize(container, playbackInfo, false);
+  }
+
+  /**
+   * @param container the {@link Container} that manages current {@link #player}.
+   * @param playbackInfo the initial playback info.
+   * @param startLoading also loading resource for playback. This parameter doesn't have effect on
+   * MediaPlayer. Right now it is for ExoPlayer.
+   */
+  @CallSuper  //
+  public void initialize(@NonNull Container container, @NonNull PlaybackInfo playbackInfo,
+      boolean startLoading) {
     this.container = container;
-    this.initialize(playbackInfo);
+    this.initialize(playbackInfo, startLoading);
   }
 
   public abstract void play();
@@ -182,6 +212,10 @@ public abstract class ToroPlayerHelper {
   public abstract void addOnVolumeChangeListener(@NonNull OnVolumeChangeListener listener);
 
   public abstract void removeOnVolumeChangeListener(OnVolumeChangeListener listener);
+
+  public abstract void addOnErrorListener(@NonNull ToroPlayer.OnErrorListener listener);
+
+  public abstract void removeOnErrorListener(ToroPlayer.OnErrorListener listener);
 
   // Mimic ExoPlayer
   @CallSuper protected final void onPlayerStateUpdated(boolean playWhenReady,

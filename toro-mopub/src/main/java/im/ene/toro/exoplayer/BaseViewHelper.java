@@ -112,6 +112,14 @@ abstract class BaseViewHelper<VIEW extends View> extends ToroPlayerHelper {
     this.playable.removeOnVolumeChangeListener(listener);
   }
 
+  @Override public void addOnErrorListener(@NonNull ToroPlayer.OnErrorListener listener) {
+    this.playable.addErrorListener(listener);
+  }
+
+  @Override public void removeOnErrorListener(ToroPlayer.OnErrorListener listener) {
+    this.playable.removeErrorListener(listener);
+  }
+
   // A proxy, to also hook into ToroPlayerHelper's state change event.
   private class MyEventListeners extends Playable.EventListeners {
 

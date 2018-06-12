@@ -33,6 +33,7 @@ import com.google.android.exoplayer2.trackselection.MappingTrackSelector.MappedT
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
 import com.google.android.exoplayer2.trackselection.TrackSelector;
 import com.google.android.exoplayer2.ui.PlayerView;
+import im.ene.toro.ToroPlayer;
 
 import static com.google.android.exoplayer2.trackselection.MappingTrackSelector.MappedTrackInfo.RENDERER_SUPPORT_UNSUPPORTED_TRACKS;
 import static im.ene.toro.exoplayer.ToroExo.toro;
@@ -108,8 +109,15 @@ public class ExoPlayable extends PlayableImpl {
   protected void onErrorMessage(@NonNull String message) {
     // Sub class can have custom reaction about the error here, including not to show this toast
     // (by not calling super.onErrorMessage(message)).
-    if (playerView != null) {
-      Toast.makeText(playerView.getContext(), message, Toast.LENGTH_SHORT).show();
+    if (errorListeners != null && errorListeners.size() > 0) {
+      final Exception error = new RuntimeException(message);
+      for (ToroPlayer.OnErrorListener errorListener : errorListeners) {
+        errorListener.onError(error);
+      }
+    } else {
+      if (playerView != null) {
+        Toast.makeText(playerView.getContext(), message, Toast.LENGTH_SHORT).show();
+      }
     }
   }
 
@@ -122,7 +130,7 @@ public class ExoPlayable extends PlayableImpl {
       lastSeenTrackGroupArray = trackGroups;
       if (!(creator instanceof DefaultExoCreator)) return;
       TrackSelector selector = ((DefaultExoCreator) creator).getTrackSelector();
-      if (selector != null && selector instanceof DefaultTrackSelector) {
+      if (selector instanceof DefaultTrackSelector) {
         MappedTrackInfo trackInfo = ((DefaultTrackSelector) selector).getCurrentMappedTrackInfo();
         if (trackInfo != null) {
           if (trackInfo.getTrackTypeRendererSupport(C.TRACK_TYPE_VIDEO)
@@ -164,7 +172,9 @@ public class ExoPlayable extends PlayableImpl {
         }
       }
 
-      if (errorString != null) onErrorMessage(errorString);
+      if (errorString != null) {
+        onErrorMessage(errorString);
+      }
 
       inErrorState = true;
       if (isBehindLiveWindow(error)) {

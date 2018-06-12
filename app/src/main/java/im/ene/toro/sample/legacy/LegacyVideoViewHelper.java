@@ -20,10 +20,10 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.google.android.exoplayer2.C;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.ToroPlayer.State;
+import im.ene.toro.ToroUtil;
 import im.ene.toro.helper.ToroPlayerHelper;
 import im.ene.toro.media.PlaybackInfo;
 import im.ene.toro.media.VolumeInfo;
@@ -131,6 +131,12 @@ public class LegacyVideoViewHelper extends ToroPlayerHelper {
     }
 
     this.playerView.setOnErrorListener((mp, what, extra) -> {
+      if (errorListeners != null && errorListeners.size() > 0) {
+        Exception error = new PlayerException(what, extra);
+        for (ToroPlayer.OnErrorListener listener : errorListeners) {
+          listener.onError(error);
+        }
+      }
       return true;  // prevent the system error dialog.
     });
 
@@ -199,6 +205,7 @@ public class LegacyVideoViewHelper extends ToroPlayerHelper {
 
   // Use a Set to prevent duplicated setup.
   protected Set<ToroPlayer.OnVolumeChangeListener> volumeChangeListeners;
+  protected Set<ToroPlayer.OnErrorListener> errorListeners;
 
   @Override
   public void addOnVolumeChangeListener(@NonNull ToroPlayer.OnVolumeChangeListener listener) {
@@ -208,6 +215,15 @@ public class LegacyVideoViewHelper extends ToroPlayerHelper {
 
   @Override public void removeOnVolumeChangeListener(ToroPlayer.OnVolumeChangeListener listener) {
     if (volumeChangeListeners != null) volumeChangeListeners.remove(listener);
+  }
+
+  @Override public void addOnErrorListener(@NonNull ToroPlayer.OnErrorListener listener) {
+    if (errorListeners == null) errorListeners = new HashSet<>();
+    errorListeners.add(ToroUtil.checkNotNull(listener));
+  }
+
+  @Override public void removeOnErrorListener(ToroPlayer.OnErrorListener listener) {
+    if (errorListeners != null) errorListeners.remove(listener);
   }
 
   void updateResumePosition() {
@@ -230,5 +246,23 @@ public class LegacyVideoViewHelper extends ToroPlayerHelper {
     this.playerState = State.STATE_IDLE;
     this.playWhenReady = false;
     super.release();
+  }
+
+  public static class PlayerException extends Exception {
+    final int what;
+    final int extra;
+
+    PlayerException(int what, int extra) {
+      this.what = what;
+      this.extra = extra;
+    }
+
+    public int getWhat() {
+      return what;
+    }
+
+    public int getExtra() {
+      return extra;
+    }
   }
 }

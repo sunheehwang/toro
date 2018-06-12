@@ -21,6 +21,7 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.android.exoplayer2.C;
+import com.google.android.exoplayer2.ExoPlaybackException;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.PlaybackParameters;
 import com.google.android.exoplayer2.SimpleExoPlayer;
@@ -51,6 +52,8 @@ abstract class BasePlayableImpl<VIEW> implements Playable<VIEW> {
   protected final EventListeners listeners = new EventListeners();  // original listener.
   // Use a Set to prevent duplicated setup.
   protected Set<ToroPlayer.OnVolumeChangeListener> volumeChangeListeners;
+  protected Set<ToroPlayer.OnErrorListener> errorListeners;
+  protected EventListener listener;
 
   protected final Uri mediaUri; // immutable, parcelable
   protected final String fileExt;
@@ -69,6 +72,11 @@ abstract class BasePlayableImpl<VIEW> implements Playable<VIEW> {
   }
 
   @CallSuper @Override public void prepare(boolean prepareSource) {
+    if (listener == null) {
+      listener = new Listener();
+      this.addEventListener(listener);
+    }
+
     if (player == null) {
       player = with(checkNotNull(creator.getContext(), "ExoCreator has no Context")) //
           .requestPlayer(creator);
@@ -123,6 +131,11 @@ abstract class BasePlayableImpl<VIEW> implements Playable<VIEW> {
   }
 
   @CallSuper @Override public void release() {
+    if (listener != null) {
+      this.removeEventListener(listener);
+      listener = null;
+    }
+
     this.setPlayerView(null);
     if (this.player != null) {
       this.player.stop();
@@ -224,6 +237,15 @@ abstract class BasePlayableImpl<VIEW> implements Playable<VIEW> {
     }
   }
 
+  @Override public void addErrorListener(@NonNull ToroPlayer.OnErrorListener listener) {
+    if (errorListeners == null) errorListeners = new HashSet<>();
+    errorListeners.add(ToroUtil.checkNotNull(listener));
+  }
+
+  @Override public void removeErrorListener(ToroPlayer.OnErrorListener listener) {
+    if (errorListeners != null) errorListeners.remove(listener);
+  }
+
   @Override public boolean isPlaying() {
     return player != null && player.getPlayWhenReady();
   }
@@ -242,6 +264,18 @@ abstract class BasePlayableImpl<VIEW> implements Playable<VIEW> {
     if (mediaSource == null) {  // Only actually prepare the source when play() is called.
       mediaSource = creator.createMediaSource(mediaUri, fileExt);
       player.prepare(mediaSource, playbackInfo.getResumeWindow() == C.INDEX_UNSET, false);
+    }
+  }
+
+  class Listener extends DefaultEventListener {
+
+    @Override public void onPlayerError(ExoPlaybackException error) {
+      super.onPlayerError(error);
+      if (errorListeners != null && errorListeners.size() > 0) {
+        for (ToroPlayer.OnErrorListener errorListener : errorListeners) {
+          errorListener.onError(error);
+        }
+      }
     }
   }
 }
