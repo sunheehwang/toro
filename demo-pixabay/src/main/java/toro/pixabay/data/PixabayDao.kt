@@ -56,11 +56,25 @@ abstract class PixabayDao {
   @Query("SELECT * FROM pixabay_item")
   abstract fun getItems(): DataSource.Factory<Int, PixabayItem>
 
+  @Query(
+      "SELECT * FROM pixabay_item WHERE pixabay_item.`query` == :query AND type == 1 ORDER BY timeStamp ASC")
+  abstract fun getPhotosForQuery(query: String): DataSource.Factory<Int, PixabayItem>
+
+  @Query(
+      "SELECT * FROM pixabay_item WHERE pixabay_item.`query` == :query AND type == 2 ORDER BY timeStamp ASC")
+  abstract fun getVideosForQuery(query: String): DataSource.Factory<Int, PixabayItem>
+
   @Query("SELECT * FROM pixabay_item WHERE pixabay_item.`query` == :query ORDER BY timeStamp ASC")
-  abstract fun getItemsForQuery(query: String): DataSource.Factory<Int, PixabayItem>
+  abstract fun getAllItems(query: String): DataSource.Factory<Int, PixabayItem>
+
+  @Query("SELECT * FROM pixabay_item ORDER BY timeStamp ASC")
+  abstract fun getAllItems(): DataSource.Factory<Int, PixabayItem>
 
   @Query("DELETE FROM pixabay_item WHERE pixabay_item.`query` == :query")
   abstract fun deleteItemsForQuery(query: String)
+
+  @Query("DELETE FROM pixabay_item")
+  abstract fun deleteAllItems()
 
   @Query("SELECT * FROM pixabay_item WHERE pageUrl == :pageUrl LIMIT 1")
   abstract fun getItem(pageUrl: String): LiveData<PixabayItem>

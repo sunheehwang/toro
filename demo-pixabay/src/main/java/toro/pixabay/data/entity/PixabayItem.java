@@ -18,18 +18,23 @@ package toro.pixabay.data.entity;
 
 import android.arch.persistence.room.Embedded;
 import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.Index;
 import android.arch.persistence.room.PrimaryKey;
 import android.support.annotation.NonNull;
 
 /**
  * @author eneim (2018/05/11).
  */
-@Entity(tableName = "pixabay_item") public class PixabayItem {
+@Entity(  //
+    tableName = "pixabay_item", //
+    indices = { @Index(value = "query"), @Index(value = "timeStamp") } //
+) //
+public class PixabayItem {
 
   private int type; // 1: Photo, 2: Video
   private long timeStamp;
 
-  @PrimaryKey @NonNull private String pageUrl;
+  @PrimaryKey @NonNull private String pageUrl = "";
 
   @Embedded(prefix = "photo_") private PhotoItem photoItem;
 
@@ -85,9 +90,9 @@ import android.support.annotation.NonNull;
     this.timeStamp = timeStamp;
   }
 
-  public static PixabayItem fromPhotoItem(PhotoItem item) {
+  public static PixabayItem fromPhotoItem(PhotoItem item, long nowNano) {
     PixabayItem result = new PixabayItem();
-    result.timeStamp = System.nanoTime();
+    result.timeStamp = nowNano;
     result.type = 1;
     result.pageUrl = item.getPageURL();
     result.photoItem = item;
@@ -95,13 +100,47 @@ import android.support.annotation.NonNull;
     return result;
   }
 
-  public static PixabayItem fromVideoItem(VideoItem item) {
+  public static PixabayItem fromVideoItem(VideoItem item, long nowNano) {
     PixabayItem result = new PixabayItem();
-    result.timeStamp = System.nanoTime();
+    result.timeStamp = nowNano;
     result.type = 2;
     result.pageUrl = item.getPageURL();
     result.videoItem = item;
     result.photoItem = null;
     return result;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    PixabayItem that = (PixabayItem) o;
+
+    if (type != that.type) return false;
+    if (!pageUrl.equals(that.pageUrl)) return false;
+    if (photoItem != null ? !photoItem.equals(that.photoItem) : that.photoItem != null) {
+      return false;
+    }
+    return videoItem != null ? videoItem.equals(that.videoItem) : that.videoItem == null;
+  }
+
+  @Override public int hashCode() {
+    int result = type;
+    result = 31 * result + pageUrl.hashCode();
+    result = 31 * result + (photoItem != null ? photoItem.hashCode() : 0);
+    result = 31 * result + (videoItem != null ? videoItem.hashCode() : 0);
+    return result;
+  }
+
+  @Override public String toString() {
+    return "PixabayItem{"
+        + "type="
+        + type
+        + ", timeStamp="
+        + timeStamp
+        + ", pageUrl='"
+        + pageUrl
+        + '\''
+        + '}';
   }
 }

@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <!--
   ~ Copyright (c) 2018 Nam Nguyen, nam@ene.im
   ~
@@ -14,18 +15,12 @@
   ~ limitations under the License.
   -->
 
-<resources>
-
-  <!-- Base application theme. -->
-  <style name="AppTheme" parent="Theme.AppCompat.NoActionBar">
-    <!-- Customize your theme here. -->
-    <!--<item name="colorPrimary">@color/colorPrimary</item>-->
-    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-    <!--<item name="colorAccent">@color/colorAccent</item>-->
-  </style>
-
-  <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar"/>
-
-  <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light"/>
-
-</resources>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+  <gradient
+      android:angle="135"
+      android:centerColor="#FEEAFA"
+      android:endColor="#DEE2FF"
+      android:startColor="#EFD3D7"
+      android:type="linear"/>
+</shape>

@@ -32,6 +32,7 @@ import im.ene.toro.exoplayer.ToroExo
 import im.ene.toro.media.VolumeInfo
 import kotlinx.android.synthetic.main.activity_demo_playable.debugText
 import kotlinx.android.synthetic.main.activity_demo_playable.playerView
+import toro.demo.exoplayer.DemoApp
 import toro.demo.exoplayer.R
 
 /**
@@ -42,7 +43,8 @@ class PlayableDemoActivity : AppCompatActivity() {
   companion object {
     private val video =
     // Uri.parse("https://cdn.jwplayer.com/videos/SMd5tDhS-cSpmBcaY.mp4");
-        Uri.parse("file:///android_asset/bbb/video.mp4")
+        // Uri.parse("file:///android_asset/bbb/video.mp4")
+        Uri.parse("https://s3.amazonaws.com/hl-media-storage/02a6d890-d233-4ace-984b-0463ba588536.m4v")
   }
 
   var playable: Playable? = null
@@ -66,8 +68,9 @@ class PlayableDemoActivity : AppCompatActivity() {
     playable = lastCustomNonConfigurationInstance as Playable?
     if (playable == null) {
       playable = ExoPlayable(
-          /* DemoApp.exoCreator */ // un-comment to use custom ExoCreator
-          ToroExo.with(this).defaultCreator, video, "mp4")
+          DemoApp.exoCreator // un-comment to use custom ExoCreator
+          // ToroExo.with(this).defaultCreator
+          , video, "m4v")
           .also {
             it.prepare(true)
             it.play()

@@ -19,16 +19,23 @@ package toro.pixabay.ui.main
 import android.support.v7.widget.RecyclerView.ViewHolder
 import android.view.View
 import com.bumptech.glide.request.RequestOptions
+import toro.pixabay.R
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * @author eneim (2018/05/11).
  */
-abstract class BaseViewHolder(view: View): ViewHolder(view) {
+abstract class BaseViewHolder(view: View) : ViewHolder(view) {
 
   companion object {
     val options = RequestOptions().centerCrop().autoClone()
+    private val placeholders = arrayOf(R.drawable.placeholder_1, R.drawable.placeholder_2,
+        R.drawable.placeholder_3, R.drawable.placeholder_4, R.drawable.placeholder_5)
+    private val index = AtomicInteger(0)
+    fun getPlaceHolder() = placeholders[index.getAndIncrement() % placeholders.size]
   }
 
   @Suppress("UNUSED_PARAMETER")
-  open fun bind(item: Any?) {}
+  open fun bind(item: Any?) {
+  }
 }

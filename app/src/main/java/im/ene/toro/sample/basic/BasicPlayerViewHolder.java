@@ -18,6 +18,7 @@ package im.ene.toro.sample.basic;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import butterknife.BindView;
@@ -44,12 +45,15 @@ class BasicPlayerViewHolder extends RecyclerView.ViewHolder implements ToroPlaye
 
   ToroPlayerHelper helper;
   Uri mediaUri;
+  final OnErrorListener errorListener;
 
   @BindView(R.id.player) PlayerView playerView;
 
   public BasicPlayerViewHolder(View itemView) {
     super(itemView);
     ButterKnife.bind(this, itemView);
+    errorListener =
+        error -> Snackbar.make(itemView, "Error: " + error, Snackbar.LENGTH_LONG).show();
   }
 
   @NonNull @Override public View getPlayerView() {
@@ -65,7 +69,8 @@ class BasicPlayerViewHolder extends RecyclerView.ViewHolder implements ToroPlaye
     if (helper == null) {
       helper = new ExoPlayerViewHelper(this, mediaUri);
     }
-    helper.initialize(container, playbackInfo);
+    helper.addOnErrorListener(errorListener);
+    helper.initialize(container, playbackInfo, true);
   }
 
   @Override public void play() {
@@ -82,6 +87,7 @@ class BasicPlayerViewHolder extends RecyclerView.ViewHolder implements ToroPlaye
 
   @Override public void release() {
     if (helper != null) {
+      helper.removeOnErrorListener(errorListener);
       helper.release();
       helper = null;
     }

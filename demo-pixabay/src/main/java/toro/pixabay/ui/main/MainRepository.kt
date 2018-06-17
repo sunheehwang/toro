@@ -21,15 +21,11 @@ import android.arch.lifecycle.MutableLiveData
 import android.arch.lifecycle.Transformations
 import android.arch.paging.LivePagedListBuilder
 import android.arch.paging.PagingRequestHelper
-import android.arch.paging.PagingRequestHelper.Request.Callback
-import android.arch.paging.PagingRequestHelper.RequestType.AFTER
 import toro.pixabay.common.ListModel
 import toro.pixabay.common.NetworkState
-import toro.pixabay.data.Api
+import toro.pixabay.data.MixedApi
 import toro.pixabay.data.PixabayDao
-import toro.pixabay.data.entity.PhotoSearchResult
 import toro.pixabay.data.entity.PixabayItem
-import toro.pixabay.data.entity.VideoSearchResult
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import javax.inject.Named
@@ -38,7 +34,7 @@ import javax.inject.Named
  * @author eneim (2018/05/10).
  */
 class MainRepository @Inject constructor(
-    private val api: Api,
+    mixedApi: MixedApi,
     private val dao: PixabayDao,
     @Named("io.executor") private val ioExecutor: Executor,
     @Named("disk.executor") private val diskExecutor: Executor
@@ -51,46 +47,28 @@ class MainRepository @Inject constructor(
   private val helper = PagingRequestHelper(ioExecutor)
   private val photoPageSize = DEFAULT_NETWORK_PAGE_SIZE * 3
   private val videoPageSize = DEFAULT_NETWORK_PAGE_SIZE
+  private val boundaryCallback = PixabayItemsBoundaryCallback(
+      mixedApi, ioExecutor, helper, this::insertToDb, photoPageSize, videoPageSize
+  )
 
-  private fun insertToDb(result: List<PixabayItem>?) {
-    diskExecutor.execute { dao.insertItems(result!!) }
-  }
-
-  private fun insertResultToDb(photoSearchResult: PhotoSearchResult,
-      videoSearchResult: VideoSearchResult, query: String, refresh: Boolean, callback: Callback) {
+  private fun insertToDb(result: List<PixabayItem>?, reset: Boolean) {
     diskExecutor.execute {
-      if (refresh) dao.deleteItemsForQuery(query)
-      val photos = photoSearchResult.hits
-      val videos = videoSearchResult.hits
-      val itemCount = photos.size + videos.size
-      val limit = Math.min(itemCount / 3, videos.size)
-      var index = 0
-      val result = arrayListOf<PixabayItem>()
-      while (index < limit) {
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 0]).also { it.query = query })
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 1]).also { it.query = query })
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 2]).also { it.query = query })
-        result.add(PixabayItem.fromVideoItem(videos[index]).also { it.query = query })
-        index++
-      }
-      dao.insertItems(result)
-      callback.recordSuccess()
+      if (reset) dao.deleteAllItems()
+      dao.insertItems(result!!)
     }
   }
 
   fun getItems(query: String): ListModel<PixabayItem> {
-    val boundaryCallback = PixabayItemsBoundaryCallback(
-        query, api, ioExecutor, diskExecutor, helper, this::insertToDb, DEFAULT_NETWORK_PAGE_SIZE
-    )
-
     val refreshTrigger = MutableLiveData<Unit>()
-    val refreshState = Transformations.switchMap(refreshTrigger, {
+    val refreshState = Transformations.switchMap(refreshTrigger) {
       refresh(query)
-    })
+    }
 
     return ListModel<PixabayItem>(
-        LivePagedListBuilder<Int, PixabayItem>(dao.getItemsForQuery(query),
-            DEFAULT_NETWORK_PAGE_SIZE * 4).setBoundaryCallback(boundaryCallback).build(),
+        LivePagedListBuilder<Int, PixabayItem>(
+            dao.getAllItems(),
+            photoPageSize + videoPageSize
+        ).setBoundaryCallback(boundaryCallback).build(),
         boundaryCallback.networkState,
         refreshState,
         refresh = { refreshTrigger.value = null },
@@ -99,24 +77,7 @@ class MainRepository @Inject constructor(
   }
 
   private fun refresh(query: String): LiveData<NetworkState> {
-    val networkState = MutableLiveData<NetworkState>()
-    networkState.value = NetworkState.LOADING
-    helper.runIfNotRunning(AFTER) {
-      ioExecutor.execute {
-        try {
-          val photoResult = api.searchPhoto(query, 1,
-              photoPageSize).execute().body()
-          val videoResult = api.searchVideo(query, 1,
-              videoPageSize).execute().body()
-          insertResultToDb(photoResult!!, videoResult!!, query, true, it)
-          networkState.postValue(NetworkState.LOADED)
-        } catch (error: Throwable) {
-          it.recordFailure(error)
-          networkState.postValue(NetworkState.error(error.message))
-        }
-      }
-    }
-    return networkState
+    return boundaryCallback.refresh(query)
   }
 }
 

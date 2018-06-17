@@ -36,7 +36,7 @@ import toro.pixabay.ui.main.MainAdapter.ViewHolderListener
  */
 class PhotoItemViewHolder(val view: View, val listener: ViewHolderListener) : BaseViewHolder(
     view), OnClickListener {
-  val imageView = itemView.findViewById<ImageView>(R.id.imageView)
+  val imageView = itemView.findViewById<ImageView>(R.id.imageView)!!
 
   init {
     itemView.setOnClickListener(this)
@@ -49,7 +49,7 @@ class PhotoItemViewHolder(val view: View, val listener: ViewHolderListener) : Ba
       Glide.with(imageView).load(photo.largeImageURL)
           .transition(DrawableTransitionOptions.withCrossFade())
           .thumbnail(0.25f)
-          .apply(options.placeholder(R.drawable.side_nav_bar))
+          .apply(options.placeholder(getPlaceHolder()))
           .listener(object : RequestListener<Drawable> {
             override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?,
                 isFirstResource: Boolean): Boolean {

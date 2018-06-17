@@ -93,7 +93,7 @@ internal class VideoViewHolder(inflater: LayoutInflater, parent: ViewGroup) :
       }
       helper!!.addPlayerEventListener(listener!!)
     }
-    helper!!.initialize(container, playbackInfo)
+    helper!!.initialize(container, playbackInfo, false)
   }
 
   override fun play() {

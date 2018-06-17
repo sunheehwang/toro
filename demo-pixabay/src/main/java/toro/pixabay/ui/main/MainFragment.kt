@@ -27,6 +27,9 @@ import android.support.v7.app.AlertDialog
 import android.support.v7.widget.AppCompatEditText
 import android.support.v7.widget.GridLayoutManager
 import android.support.v7.widget.GridLayoutManager.SpanSizeLookup
+import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView.AdapterDataObserver
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.OnLayoutChangeListener
@@ -84,6 +87,7 @@ class MainFragment : Fragment(), Injectable {
     swipeToRefresh = view.findViewById(R.id.swipeToRefresh)
 
     val adapter = MainAdapter(creator, this)
+    adapter.registerAdapterDataObserver(dataObserver)
     model.items.observe(this, Observer { adapter.submitList(it) })
     model.networkState.observe(this, Observer { adapter.setNetworkState(it) })
 
@@ -102,7 +106,12 @@ class MainFragment : Fragment(), Injectable {
 
   override fun onActivityCreated(state: Bundle?) {
     super.onActivityCreated(state)
-    model.search(state?.getString(STATE_QUERY) ?: "Holiday")
+    model.search(state?.getString(STATE_QUERY) ?: "")
+  }
+
+  override fun onDestroyView() {
+    container?.adapter?.unregisterAdapterDataObserver(dataObserver)
+    super.onDestroyView()
   }
 
   override fun onSaveInstanceState(outState: Bundle) {
@@ -133,10 +142,6 @@ class MainFragment : Fragment(), Injectable {
     dialogBuilder.create().show()
   }
 
-  fun scrollToTop() {
-    container?.smoothScrollToPosition(0)
-  }
-
   /**
    * Scrolls the recycler view to show the last viewed item in the grid. This is important when
    * navigating back from the grid.
@@ -154,13 +159,16 @@ class MainFragment : Fragment(), Injectable {
           oldRight: Int,
           oldBottom: Int) {
         container.removeOnLayoutChangeListener(this)
-        val layoutManager = container.layoutManager
+        val layoutManager = container.layoutManager as LinearLayoutManager
         val viewAtPosition = layoutManager.findViewByPosition(MainActivity.currentPosition)
         // Scroll to position if the view for the current position is null (not currently part of
         // layout manager children), or it's not completely visible.
         if (viewAtPosition == null || //
             layoutManager.isViewPartiallyVisible(viewAtPosition, false, true)) {
-          container.post({ layoutManager.scrollToPosition(MainActivity.currentPosition) })
+          container.postDelayed({
+            layoutManager.scrollToPositionWithOffset(MainActivity.currentPosition,
+                MainActivity.currentTop)
+          }, 150)
         }
       }
     })
@@ -199,5 +207,15 @@ class MainFragment : Fragment(), Injectable {
   interface Callback {
 
     fun onSearchQuery(query: String)
+  }
+
+  private val dataObserver = object : AdapterDataObserver() {
+    override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+      super.onItemRangeInserted(positionStart, itemCount)
+      Log.i("Toro:Main", "inserted: $positionStart, $itemCount")
+      if (positionStart == 0) {
+        container?.scrollToPosition(0)
+      }
+    }
   }
 }

@@ -51,7 +51,7 @@ class VideoItemViewHolder(view: View, val creator: ExoCreator) : BaseViewHolder(
 
   val eventListener = object : EventListener {
     override fun onBuffering() {
-      thumbnail.visibility = View.VISIBLE
+      // thumbnail.visibility = View.VISIBLE
       status.text = "Buffering"
     }
 
@@ -83,7 +83,7 @@ class VideoItemViewHolder(view: View, val creator: ExoCreator) : BaseViewHolder(
       Glide.with(itemView).load(video.thumbnailUri())
           .transition(DrawableTransitionOptions.withCrossFade())
           .thumbnail(0.15f)
-          .apply(options).into(thumbnail)
+          .apply(options.placeholder(getPlaceHolder())).into(thumbnail)
     }
     status.text = "Bound"
   }
@@ -101,7 +101,7 @@ class VideoItemViewHolder(view: View, val creator: ExoCreator) : BaseViewHolder(
       playerHelper = ExoPlayerViewHelper(this, ExoPlayable(creator, videoUri!!, null))
       playerHelper!!.addPlayerEventListener(eventListener)
     }
-    playerHelper!!.initialize(container, playbackInfo)
+    playerHelper!!.initialize(container, playbackInfo, false)
     thumbnail.visibility = View.VISIBLE
     status.text = "Initialized"
   }
@@ -139,10 +139,10 @@ class VideoItemViewHolder(view: View, val creator: ExoCreator) : BaseViewHolder(
 
 fun VideoItem.ratio(): Float {
   var size = videos.large
-  if (size == null) size = videos.medium
-  if (size == null) size = videos.small
-  if (size == null) size = videos.tiny
-  if (size == null) size = VideoSize().also {
+  if (size == null || size.height == 0) size = videos.medium
+  if (size == null || size.height == 0) size = videos.small
+  if (size == null || size.height == 0) size = videos.tiny
+  if (size == null || size.height == 0) size = VideoSize().also {
     it.width = 100
     it.height = 100
   }
@@ -151,9 +151,9 @@ fun VideoItem.ratio(): Float {
 
 fun VideoItem.getVideo(): Uri? {
   var size = videos.large
-  if (size == null) size = videos.medium
-  if (size == null) size = videos.small
-  if (size == null) size = videos.tiny
+  if (size == null || size.height == 0) size = videos.medium
+  if (size == null || size.height == 0) size = videos.small
+  if (size == null || size.height == 0) size = videos.tiny
   return if (size != null) Uri.parse(size.url + "&download=1") else null
 }
 

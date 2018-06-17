@@ -37,7 +37,7 @@ import com.squareup.moshi.Json;
   @Json(name = "views") private Integer views;
   @Json(name = "comments") private Integer comments;
   @Json(name = "userImageURL") private String userImageURL;
-  @PrimaryKey @NonNull @Json(name = "pageURL") private String pageURL;
+  @PrimaryKey @NonNull @Json(name = "pageURL") private String pageURL = "";
   @Json(name = "type") private String type;
   @Json(name = "user") private String user;
 
@@ -159,5 +159,60 @@ import com.squareup.moshi.Json;
 
   public void setUser(String user) {
     this.user = user;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    VideoItem videoItem = (VideoItem) o;
+
+    if (pictureId != null ? !pictureId.equals(videoItem.pictureId) : videoItem.pictureId != null) {
+      return false;
+    }
+    if (videos != null ? !videos.equals(videoItem.videos) : videoItem.videos != null) return false;
+    if (tags != null ? !tags.equals(videoItem.tags) : videoItem.tags != null) return false;
+    if (downloads != null ? !downloads.equals(videoItem.downloads) : videoItem.downloads != null) {
+      return false;
+    }
+    if (likes != null ? !likes.equals(videoItem.likes) : videoItem.likes != null) return false;
+    if (favorites != null ? !favorites.equals(videoItem.favorites) : videoItem.favorites != null) {
+      return false;
+    }
+    if (duration != null ? !duration.equals(videoItem.duration) : videoItem.duration != null) {
+      return false;
+    }
+    if (id != null ? !id.equals(videoItem.id) : videoItem.id != null) return false;
+    if (userId != null ? !userId.equals(videoItem.userId) : videoItem.userId != null) return false;
+    if (views != null ? !views.equals(videoItem.views) : videoItem.views != null) return false;
+    if (comments != null ? !comments.equals(videoItem.comments) : videoItem.comments != null) {
+      return false;
+    }
+    if (userImageURL != null ? !userImageURL.equals(videoItem.userImageURL)
+        : videoItem.userImageURL != null) {
+      return false;
+    }
+    if (!pageURL.equals(videoItem.pageURL)) return false;
+    if (type != null ? !type.equals(videoItem.type) : videoItem.type != null) return false;
+    return user != null ? user.equals(videoItem.user) : videoItem.user == null;
+  }
+
+  @Override public int hashCode() {
+    int result = pictureId != null ? pictureId.hashCode() : 0;
+    result = 31 * result + (videos != null ? videos.hashCode() : 0);
+    result = 31 * result + (tags != null ? tags.hashCode() : 0);
+    result = 31 * result + (downloads != null ? downloads.hashCode() : 0);
+    result = 31 * result + (likes != null ? likes.hashCode() : 0);
+    result = 31 * result + (favorites != null ? favorites.hashCode() : 0);
+    result = 31 * result + (duration != null ? duration.hashCode() : 0);
+    result = 31 * result + (id != null ? id.hashCode() : 0);
+    result = 31 * result + (userId != null ? userId.hashCode() : 0);
+    result = 31 * result + (views != null ? views.hashCode() : 0);
+    result = 31 * result + (comments != null ? comments.hashCode() : 0);
+    result = 31 * result + (userImageURL != null ? userImageURL.hashCode() : 0);
+    result = 31 * result + pageURL.hashCode();
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (user != null ? user.hashCode() : 0);
+    return result;
   }
 }

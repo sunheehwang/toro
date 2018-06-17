@@ -23,7 +23,7 @@ import com.squareup.moshi.Json;
 
 @Entity public class VideoSizes {
 
-  @PrimaryKey @NonNull private String videoId;  // set by client
+  @PrimaryKey @NonNull private String videoId = "";  // set by client
 
   @Json(name = "large") private VideoSize large;
   @Json(name = "small") private VideoSize small;
@@ -68,5 +68,27 @@ import com.squareup.moshi.Json;
 
   public void setVideoId(@NonNull String videoId) {
     this.videoId = videoId;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    VideoSizes that = (VideoSizes) o;
+
+    if (!videoId.equals(that.videoId)) return false;
+    if (large != null ? !large.equals(that.large) : that.large != null) return false;
+    if (small != null ? !small.equals(that.small) : that.small != null) return false;
+    if (medium != null ? !medium.equals(that.medium) : that.medium != null) return false;
+    return tiny != null ? tiny.equals(that.tiny) : that.tiny == null;
+  }
+
+  @Override public int hashCode() {
+    int result = videoId.hashCode();
+    result = 31 * result + (large != null ? large.hashCode() : 0);
+    result = 31 * result + (small != null ? small.hashCode() : 0);
+    result = 31 * result + (medium != null ? medium.hashCode() : 0);
+    result = 31 * result + (tiny != null ? tiny.hashCode() : 0);
+    return result;
   }
 }

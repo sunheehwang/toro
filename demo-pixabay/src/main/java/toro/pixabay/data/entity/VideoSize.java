@@ -23,7 +23,7 @@ import com.squareup.moshi.Json;
 
 @Entity public class VideoSize {
 
-  @PrimaryKey @NonNull @Json(name = "url") private String url;
+  @PrimaryKey @NonNull @Json(name = "url") private String url = "";
   @Json(name = "width") private Integer width;
   @Json(name = "size") private Integer size;
   @Json(name = "height") private Integer height;
@@ -58,5 +58,25 @@ import com.squareup.moshi.Json;
 
   public void setHeight(Integer height) {
     this.height = height;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    VideoSize videoSize = (VideoSize) o;
+
+    if (!url.equals(videoSize.url)) return false;
+    if (width != null ? !width.equals(videoSize.width) : videoSize.width != null) return false;
+    if (size != null ? !size.equals(videoSize.size) : videoSize.size != null) return false;
+    return height != null ? height.equals(videoSize.height) : videoSize.height == null;
+  }
+
+  @Override public int hashCode() {
+    int result = url.hashCode();
+    result = 31 * result + (width != null ? width.hashCode() : 0);
+    result = 31 * result + (size != null ? size.hashCode() : 0);
+    result = 31 * result + (height != null ? height.hashCode() : 0);
+    return result;
   }
 }

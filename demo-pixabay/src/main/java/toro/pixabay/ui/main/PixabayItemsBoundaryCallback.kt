@@ -16,57 +16,58 @@
 
 package toro.pixabay.ui.main
 
+import android.arch.lifecycle.LiveData
+import android.arch.lifecycle.MutableLiveData
 import android.arch.paging.PagedList.BoundaryCallback
 import android.arch.paging.PagingRequestHelper
-import android.arch.paging.PagingRequestHelper.Request.Callback
 import android.arch.paging.PagingRequestHelper.RequestType.AFTER
 import android.arch.paging.PagingRequestHelper.RequestType.INITIAL
 import android.support.annotation.MainThread
+import android.util.Log
+import toro.pixabay.common.NetworkState
 import toro.pixabay.common.createStatusLiveData
-import toro.pixabay.data.Api
-import toro.pixabay.data.entity.PhotoSearchResult
+import toro.pixabay.data.MixedApi
 import toro.pixabay.data.entity.PixabayItem
-import toro.pixabay.data.entity.VideoSearchResult
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger
 
 @Suppress("CanBeParameter")
 class PixabayItemsBoundaryCallback(
-    private val query: String,
-    private val api: Api,
+    private val mixedApi: MixedApi,
     private val ioExecutor: Executor,
-    private val diskExecutor: Executor,
     private val helper: PagingRequestHelper,
-    private val handleResponse: (List<PixabayItem>?) -> Unit,
-    private val networkPageSize: Int
+    private val handleResponse: (List<PixabayItem>?, Boolean) -> Unit,
+    private val photoPageSize: Int,
+    private val videoPageSize: Int
 ) : BoundaryCallback<PixabayItem>() {
 
-  private val pageNumber = AtomicInteger(1)
-  // Combine result from photo search and video search, and every 3 photo item I insert 1 video item.
-  private val photoPageSize = networkPageSize * 3
-  private val videoPageSize = networkPageSize
+  companion object {
+    const val TAG = "Toro:BCallback"
+  }
 
+  @Suppress("MemberVisibilityCanBePrivate")
+  val pageNumber = AtomicInteger(1)
   val networkState = helper.createStatusLiveData()
 
-  private fun insertIntoDb(photoSearchResult: PhotoSearchResult,
-      videoSearchResult: VideoSearchResult, callback: Callback) {
-    diskExecutor.execute {
-      val photos = photoSearchResult.hits
-      val videos = videoSearchResult.hits
-      val itemCount = photos.size + videos.size
-      val limit = Math.min(itemCount / 4, videos.size)
-      var index = 0
-      val result = arrayListOf<PixabayItem>()
-      while (index < limit) {
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 0]).also { it.query = query })
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 1]).also { it.query = query })
-        result.add(PixabayItem.fromPhotoItem(photos[index * 3 + 2]).also { it.query = query })
-        result.add(PixabayItem.fromVideoItem(videos[index]).also { it.query = query })
-        index++
+  fun refresh(query: String): LiveData<NetworkState> {
+    val networkState = MutableLiveData<NetworkState>()
+    networkState.value = NetworkState.LOADING
+    pageNumber.set(1)
+    helper.runIfNotRunning(INITIAL) {
+      ioExecutor.execute {
+        try {
+          val result = mixedApi.search(query, pageNumber.get(), photoPageSize, videoPageSize)
+          handleResponse(result.hits, true)
+          it.recordSuccess()
+          pageNumber.incrementAndGet()
+          networkState.postValue(NetworkState.LOADED)
+        } catch (error: Throwable) {
+          it.recordFailure(error)
+          networkState.postValue(NetworkState.error(error.message))
+        }
       }
-      handleResponse(result)
-      callback.recordSuccess()
     }
+    return networkState
   }
 
   /**
@@ -78,11 +79,8 @@ class PixabayItemsBoundaryCallback(
     helper.runIfNotRunning(INITIAL) {
       ioExecutor.execute {
         try {
-          val photoResult = api.searchPhoto(query, pageNumber.get(),
-              photoPageSize).execute().body()
-          val videoResult = api.searchVideo(query, pageNumber.get(),
-              videoPageSize).execute().body()
-          insertIntoDb(photoResult!!, videoResult!!, it)
+          val result = mixedApi.search(null, pageNumber.get(), photoPageSize, videoPageSize)
+          handleResponse(result.hits, false)
           pageNumber.incrementAndGet()
         } catch (error: Throwable) {
           it.recordFailure(error)
@@ -98,12 +96,11 @@ class PixabayItemsBoundaryCallback(
   override fun onItemAtEndLoaded(item: PixabayItem) {
     helper.runIfNotRunning(AFTER) {
       ioExecutor.execute {
+        Log.i(TAG, "onItemAtEndLoaded() is called")
         try {
-          val photoResult = api.searchPhoto(query, pageNumber.get(),
-              photoPageSize).execute().body()
-          val videoResult = api.searchVideo(query, pageNumber.get(),
-              videoPageSize).execute().body()
-          insertIntoDb(photoResult!!, videoResult!!, it)
+          val result = mixedApi.search(null, pageNumber.get(), photoPageSize, videoPageSize)
+          handleResponse(result.hits, false)
+          it.recordSuccess()
           pageNumber.incrementAndGet()
         } catch (error: Throwable) {
           it.recordFailure(error)

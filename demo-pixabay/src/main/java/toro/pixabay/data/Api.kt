@@ -38,9 +38,21 @@ interface Api {
       @Query("per_page") perPage: Int
   ): Call<PhotoSearchResult>
 
+  @GET("/api?image_type=photo")
+  fun searchAllPhotos(
+      @Query("page") page: Int,
+      @Query("per_page") perPage: Int
+  ): Call<PhotoSearchResult>
+
   @GET("/api/videos/?video_type=film")
   fun searchVideo(
       @Query("q") query: String,
+      @Query("page") page: Int,
+      @Query("per_page") perPage: Int
+  ): Call<VideoSearchResult>
+
+  @GET("/api/videos/?video_type=film")
+  fun searchAllVideos(
       @Query("page") page: Int,
       @Query("per_page") perPage: Int
   ): Call<VideoSearchResult>

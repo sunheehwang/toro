@@ -22,17 +22,16 @@ import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import dagger.android.DispatchingAndroidInjector
 import dagger.android.support.HasSupportFragmentInjector
-import kotlinx.android.synthetic.main.main_activity.searchFab
-import kotlinx.android.synthetic.main.main_activity.toolbar
 import toro.pixabay.R
 import javax.inject.Inject
-
 
 class MainActivity : AppCompatActivity(), HasSupportFragmentInjector, MainFragment.Callback {
 
   companion object {
     var currentPosition = -1
+    var currentTop = -1
     const val EXTRA_CURRENT_POSITION = "toro.pixabay:extra:current_position"
+    const val EXTRA_CURRENT_POSITION_TOP = "toro.pixabay:extra:current_position_top"
   }
 
   override fun onSearchQuery(query: String) {
@@ -47,7 +46,7 @@ class MainActivity : AppCompatActivity(), HasSupportFragmentInjector, MainFragme
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.main_activity)
-    setSupportActionBar(toolbar)
+    // setSupportActionBar(toolbar)
 
     var mainFragment = supportFragmentManager.findFragmentById(
         R.id.fragmentContainer) as MainFragment?
@@ -59,18 +58,15 @@ class MainActivity : AppCompatActivity(), HasSupportFragmentInjector, MainFragme
           .commit()
     }
 
-    searchFab.setOnClickListener {
-      mainFragment.onUserRequestSearch()
-    }
-
-    toolbar.setOnTouchListener { _, _ ->
-      mainFragment.scrollToTop()
-      true
-    }
+//    toolbar.setOnTouchListener { _, _ ->
+//      mainFragment.scrollToTop()
+//      true
+//    }
   }
 
   override fun onSaveInstanceState(outState: Bundle, outPersistentState: PersistableBundle) {
     super.onSaveInstanceState(outState, outPersistentState)
     outState.putInt(EXTRA_CURRENT_POSITION, currentPosition)
+    outState.putInt(EXTRA_CURRENT_POSITION_TOP, currentTop)
   }
 }

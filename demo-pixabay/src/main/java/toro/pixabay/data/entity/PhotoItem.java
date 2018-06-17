@@ -223,4 +223,117 @@ public class PhotoItem {
   public void setPreviewURL(String previewURL) {
     this.previewURL = previewURL;
   }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    PhotoItem photoItem = (PhotoItem) o;
+
+    if (largeImageURL != null ? !largeImageURL.equals(photoItem.largeImageURL)
+        : photoItem.largeImageURL != null) {
+      return false;
+    }
+    if (webformatHeight != null ? !webformatHeight.equals(photoItem.webformatHeight)
+        : photoItem.webformatHeight != null) {
+      return false;
+    }
+    if (webformatWidth != null ? !webformatWidth.equals(photoItem.webformatWidth)
+        : photoItem.webformatWidth != null) {
+      return false;
+    }
+    if (likes != null ? !likes.equals(photoItem.likes) : photoItem.likes != null) return false;
+    if (imageWidth != null ? !imageWidth.equals(photoItem.imageWidth)
+        : photoItem.imageWidth != null) {
+      return false;
+    }
+    if (id != null ? !id.equals(photoItem.id) : photoItem.id != null) return false;
+    if (userId != null ? !userId.equals(photoItem.userId) : photoItem.userId != null) return false;
+    if (views != null ? !views.equals(photoItem.views) : photoItem.views != null) return false;
+    if (comments != null ? !comments.equals(photoItem.comments) : photoItem.comments != null) {
+      return false;
+    }
+    if (!pageURL.equals(photoItem.pageURL)) return false;
+    if (imageHeight != null ? !imageHeight.equals(photoItem.imageHeight)
+        : photoItem.imageHeight != null) {
+      return false;
+    }
+    if (webformatURL != null ? !webformatURL.equals(photoItem.webformatURL)
+        : photoItem.webformatURL != null) {
+      return false;
+    }
+    if (type != null ? !type.equals(photoItem.type) : photoItem.type != null) return false;
+    if (previewHeight != null ? !previewHeight.equals(photoItem.previewHeight)
+        : photoItem.previewHeight != null) {
+      return false;
+    }
+    if (tags != null ? !tags.equals(photoItem.tags) : photoItem.tags != null) return false;
+    if (downloads != null ? !downloads.equals(photoItem.downloads) : photoItem.downloads != null) {
+      return false;
+    }
+    if (user != null ? !user.equals(photoItem.user) : photoItem.user != null) return false;
+    if (favorites != null ? !favorites.equals(photoItem.favorites) : photoItem.favorites != null) {
+      return false;
+    }
+    if (imageSize != null ? !imageSize.equals(photoItem.imageSize) : photoItem.imageSize != null) {
+      return false;
+    }
+    if (previewWidth != null ? !previewWidth.equals(photoItem.previewWidth)
+        : photoItem.previewWidth != null) {
+      return false;
+    }
+    if (userImageURL != null ? !userImageURL.equals(photoItem.userImageURL)
+        : photoItem.userImageURL != null) {
+      return false;
+    }
+    return previewURL != null ? previewURL.equals(photoItem.previewURL)
+        : photoItem.previewURL == null;
+  }
+
+  @Override public int hashCode() {
+    int result = largeImageURL != null ? largeImageURL.hashCode() : 0;
+    result = 31 * result + (webformatHeight != null ? webformatHeight.hashCode() : 0);
+    result = 31 * result + (webformatWidth != null ? webformatWidth.hashCode() : 0);
+    result = 31 * result + (likes != null ? likes.hashCode() : 0);
+    result = 31 * result + (imageWidth != null ? imageWidth.hashCode() : 0);
+    result = 31 * result + (id != null ? id.hashCode() : 0);
+    result = 31 * result + (userId != null ? userId.hashCode() : 0);
+    result = 31 * result + (views != null ? views.hashCode() : 0);
+    result = 31 * result + (comments != null ? comments.hashCode() : 0);
+    result = 31 * result + pageURL.hashCode();
+    result = 31 * result + (imageHeight != null ? imageHeight.hashCode() : 0);
+    result = 31 * result + (webformatURL != null ? webformatURL.hashCode() : 0);
+    result = 31 * result + (type != null ? type.hashCode() : 0);
+    result = 31 * result + (previewHeight != null ? previewHeight.hashCode() : 0);
+    result = 31 * result + (tags != null ? tags.hashCode() : 0);
+    result = 31 * result + (downloads != null ? downloads.hashCode() : 0);
+    result = 31 * result + (user != null ? user.hashCode() : 0);
+    result = 31 * result + (favorites != null ? favorites.hashCode() : 0);
+    result = 31 * result + (imageSize != null ? imageSize.hashCode() : 0);
+    result = 31 * result + (previewWidth != null ? previewWidth.hashCode() : 0);
+    result = 31 * result + (userImageURL != null ? userImageURL.hashCode() : 0);
+    result = 31 * result + (previewURL != null ? previewURL.hashCode() : 0);
+    return result;
+  }
+
+  @Override public String toString() {
+    return "PhotoItem{"
+        + "largeImageURL='"
+        + largeImageURL
+        + '\''
+        + ", likes="
+        + likes
+        + ", id="
+        + id
+        + ", views="
+        + views
+        + ", comments="
+        + comments
+        + ", type='"
+        + type
+        + '\''
+        + ", downloads="
+        + downloads
+        + '}';
+  }
 }

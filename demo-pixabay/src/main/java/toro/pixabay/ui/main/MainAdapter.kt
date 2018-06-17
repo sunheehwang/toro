@@ -91,11 +91,16 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
   }
 
   override fun onBindViewHolder(holder: BaseViewHolder, pos: Int) {
-    val type = getItemViewType(pos)
-    when (type) {
-      R.layout.holder_photo_item -> (holder as? PhotoItemViewHolder)?.bind(getItem(pos)?.photoItem)
-      R.layout.holder_video_item -> (holder as? VideoItemViewHolder)?.bind(getItem(pos)?.videoItem)
-      R.layout.holder_loading -> (holder as? LoadingViewHolder)?.bind(null)
+    when (holder) {
+      is PhotoItemViewHolder -> {
+        (holder as? PhotoItemViewHolder)?.bind(getItem(pos)?.photoItem)
+      }
+      is VideoItemViewHolder -> {
+        (holder as? VideoItemViewHolder)?.bind(getItem(pos)?.videoItem)
+      }
+      is LoadingViewHolder -> {
+        (holder as? LoadingViewHolder)?.bind(null)
+      }
     }
   }
 
@@ -152,6 +157,7 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
     override fun onItemClicked(view: View, adapterPosition: Int) {
       // Update the position.
       MainActivity.currentPosition = adapterPosition
+      MainActivity.currentTop = view.top
 
       // Exclude the clicked card from the exit transition (e.g. the card will disappear immediately
       // instead of fading out with the rest to prevent an overlapping animation of fade and move).
