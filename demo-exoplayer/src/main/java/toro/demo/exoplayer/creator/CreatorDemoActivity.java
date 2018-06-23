@@ -47,7 +47,7 @@ public class CreatorDemoActivity extends AppCompatActivity {
     setSupportActionBar(toolbar);
 
     playerView = findViewById(R.id.playerView);
-    Toro.with(this).play(videoUri).tag(videoUri).into(playerView);
+    Toro.with(this).setUp(videoUri).tag(videoUri).asPlayable().bind(playerView);
   }
 
 }

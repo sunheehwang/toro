@@ -19,8 +19,6 @@ package toro.v4;
 import android.graphics.Point;
 import android.graphics.Rect;
 import android.net.Uri;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.CallSuper;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -31,13 +29,21 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import im.ene.toro.ToroPlayer;
+import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author eneim (2018/05/25).
  */
-abstract class ViewPlayback<V extends View> extends Playback<V>
+class ViewPlayback<V extends View> extends Playback<V>
     implements View.OnAttachStateChangeListener, View.OnLayoutChangeListener {
+
+  @SuppressWarnings("WeakerAccess") //
+  static final Comparator<ViewToken> CENTER_Y = new Comparator<ViewToken>() {
+    @Override public int compare(ViewToken o1, ViewToken o2) {
+      return Float.compare(o1.centerY, o2.centerY);
+    }
+  };
 
   // Find a CoordinatorLayout parent of View, which doesn't reach 'root' View.
   @Nullable private static View findSuitableParent(@NonNull View root, @Nullable View view) {
@@ -63,80 +69,39 @@ abstract class ViewPlayback<V extends View> extends Playback<V>
     return top != oldTop || bottom != oldBottom || left != oldLeft || right != oldRight;
   }
 
-  private final Handler handler = new Handler(new Handler.Callback() {
-    @Override public boolean handleMessage(Message msg) {
-      Log.w(TAG, "handleMessage() called with: msg = [" + msg + "]");
-      boolean playWhenReady = (boolean) msg.obj;
-      switch (msg.what) {
-        case State.STATE_IDLE:
-          // TODO do something!?
-          break;
-        case State.STATE_BUFFERING /* Player.STATE_BUFFERING */:
-          for (ToroPlayer.EventListener listener : listeners) {
-            listener.onBuffering();
-          }
-          break;
-        case State.STATE_READY /*  Player.STATE_READY */:
-          for (ToroPlayer.EventListener listener : listeners) {
-            if (playWhenReady) {
-              listener.onPlaying();
-            } else {
-              listener.onPaused();
-            }
-          }
-          break;
-        case State.STATE_END /* Player.STATE_ENDED */:
-          for (ToroPlayer.EventListener listener : listeners) {
-            listener.onCompleted();
-          }
-          break;
-        default:
-          break;
-      }
-      return true;
-    }
-  });
-
   @SuppressWarnings("WeakerAccess") //
   final ToroPlayer.EventListener listener = new ToroPlayer.EventListener() {
     @Override public void onBuffering() {
-      Log.w(TAG, "onBuffering() called");
+      Log.d(TAG, "onBuffering() called");
       // do nothing
     }
 
     @Override public void onPlaying() {
-      Log.w(TAG, "onPlaying() called");
+      Log.d(TAG, "onPlaying() called");
       // do nothing
       View target = getTarget();
       if (target != null) target.setKeepScreenOn(true);
     }
 
     @Override public void onPaused() {
-      Log.w(TAG, "onPaused() called");
+      Log.d(TAG, "onPaused() called");
       // do nothing
     }
 
     @Override public void onCompleted() {
-      Log.w(TAG, "onCompleted() called");
+      Log.d(TAG, "onCompleted() called");
       View target = getTarget();
       if (target != null) target.setKeepScreenOn(false);
     }
   };
 
-  protected final Playable playable;  // TODO clarify how to use this
   @SuppressWarnings("WeakerAccess") @NonNull  //
   protected final AtomicBoolean targetAttached = new AtomicBoolean(false);
 
-  ViewPlayback(@NonNull Playable playable, @NonNull Uri uri, @NonNull Manager manager, @Nullable V target,
-      @NonNull Playable.Options options) {
-    super(uri, manager, target, options);
-    this.playable = playable;
-  }
-
-  // Used by subclasses to dispatch internal event listeners
-  @SuppressWarnings("WeakerAccess") //
-  protected final void dispatchPlayerStateChanged(boolean playWhenReady, @State int playbackState) {
-    handler.obtainMessage(playbackState, playWhenReady).sendToTarget();
+  ViewPlayback(@NonNull Playable playable, @NonNull Uri uri, @NonNull Manager manager,
+      @Nullable V target, @NonNull Playable.Options options) {
+    super(playable, uri, manager, target, options);
+    Log.i(TAG, "Playback: " + this.playable);
   }
 
   @CallSuper @Override void onAdded() {
@@ -150,22 +115,20 @@ abstract class ViewPlayback<V extends View> extends Playback<V>
     }
   }
 
-  @Override void onRemoved() {
-    super.onRemoved();
-    View target = super.getTarget();
-    if (target != null) target.removeOnAttachStateChangeListener(this);
-  }
-
   @Override void onActive() {
     super.onActive();
     super.addListener(this.listener);
-    this.prepare(false);
   }
 
   @Override void onInActive() {
     super.onInActive();
     super.removeListener(this.listener);
-    this.release();
+  }
+
+  @Override void onRemoved(boolean recreating) {
+    super.onRemoved(recreating);
+    View target = super.getTarget();
+    if (target != null) target.removeOnAttachStateChangeListener(this);
   }
 
   @Override public void onViewAttachedToWindow(View v) {
@@ -173,11 +136,12 @@ abstract class ViewPlayback<V extends View> extends Playback<V>
     View target = super.getTarget();
     if (target != null) {
       // Find a ancestor of target whose parent is a CoordinatorLayout, or null.
-      View colChild = findSuitableParent(manager.decorView, target);
-      ViewGroup.LayoutParams params = colChild != null ? colChild.getLayoutParams() : null;
+      View corChild = findSuitableParent(manager.decorView, target);
+      ViewGroup.LayoutParams params = corChild != null ? corChild.getLayoutParams() : null;
 
+      //noinspection StatementWithEmptyBody
       if (params instanceof CoordinatorLayout.LayoutParams) {
-        // TODO deal with CoordinatorLayout.
+        // TODO [20180620] deal with CoordinatorLayout.
       }
 
       manager.onTargetActive(target);
@@ -202,17 +166,15 @@ abstract class ViewPlayback<V extends View> extends Playback<V>
     }
   }
 
-  @CallSuper @Override public void release() {
-    handler.removeCallbacksAndMessages(null);
-  }
-
-  @Override LocToken getLocToken() {
+  @Nullable @Override protected ViewToken getToken() {
+    Log.d(TAG, "getToken() called");
     View target = super.getTarget();
     if (target == null || !this.targetAttached.get()) return null;
 
     Rect playerRect = new Rect();
     boolean visible = target.getGlobalVisibleRect(playerRect, new Point());
     if (!visible) return null;
+    Log.d(TAG, "getToken: " + playerRect);
 
     Rect drawRect = new Rect();
     target.getDrawingRect(drawRect);
@@ -223,8 +185,25 @@ abstract class ViewPlayback<V extends View> extends Playback<V>
       int visibleArea = playerRect.height() * playerRect.width();
       offset = visibleArea / (float) drawArea;
     }
+    Log.i(TAG, "getToken: " + offset);
+    return offset >= 0.75f /* TODO [20180621] make this changeable */ ?  //
+        new ViewToken(playerRect.centerX(), playerRect.centerY(), offset) : null;
+  }
 
-    return offset >= 0.65f ?  //
-        new LocToken(playerRect.centerX(), playerRect.centerY(), offset) : null;
+  // Location on screen, with visible offset within target's parent.
+  protected static class ViewToken extends Token {
+    final float centerX;
+    final float centerY;
+    final float areaOffset;
+
+    ViewToken(float centerX, float centerY, float areaOffset) {
+      this.centerX = centerX;
+      this.centerY = centerY;
+      this.areaOffset = areaOffset;
+    }
+
+    @Override public int compareTo(@NonNull Token o) {
+      return o instanceof ViewToken ? CENTER_Y.compare(this, (ViewToken) o) : super.compareTo(o);
+    }
   }
 }

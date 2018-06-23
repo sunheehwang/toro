@@ -64,6 +64,7 @@ class PlayableImpl implements Playable {
   protected SimpleExoPlayer player; // on-demand, cached
   protected MediaSource mediaSource;  // on-demand
   protected PlayerView playerView; // on-demand, not always required.
+  @Player.RepeatMode protected int repeatMode = Player.REPEAT_MODE_OFF;
 
   private boolean listenerApplied = false;
 
@@ -82,6 +83,8 @@ class PlayableImpl implements Playable {
           ((ToroExoPlayer) player).addOnVolumeChangeListener(listener);
         }
       }
+
+      player.setRepeatMode(this.repeatMode);
     }
 
     if (!listenerApplied) {
@@ -220,6 +223,15 @@ class PlayableImpl implements Playable {
 
   @Override public PlaybackParameters getParameters() {
     return checkNotNull(player, "Playable#getParameters(): Player is null").getPlaybackParameters();
+  }
+
+  @Override public void setRepeatMode(int repeatMode) {
+    this.repeatMode = repeatMode;
+    if (player != null) player.setRepeatMode(repeatMode);
+  }
+
+  @Override public int getRepeatMode() {
+    return this.repeatMode;
   }
 
   @Override

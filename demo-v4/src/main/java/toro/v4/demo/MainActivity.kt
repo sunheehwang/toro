@@ -16,16 +16,26 @@
 
 package toro.v4.demo
 
+import android.net.Uri
 import android.os.Bundle
 import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.util.SparseArray
 import kotlinx.android.synthetic.main.activity_main.navigation
+import toro.v4.Playable
+import toro.v4.Toro
+import toro.v4.demo.rview.RecyclerViewFragment
 import toro.v4.demo.sview.ScrollViewFragment
 import java.util.concurrent.atomic.AtomicInteger
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PlayableProvider {
+
+  private val videoUri: Uri =
+      Uri.parse(
+          "https://storage.googleapis.com/spec-host/mio-material/assets/1MvJxcu1kd5TFR6c5IBhxjLueQzSZvVQz/m2-manifesto.mp4")
+
+  private lateinit var playable: Playable
 
   private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
     val oldValue = checkedNav.getAndSet(item.itemId)
@@ -59,8 +69,19 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
     navigation.setOnNavigationItemSelectedListener(mOnNavigationItemSelectedListener)
 
-    fragments.put(R.id.navigation_home, ScrollViewFragment.newInstance())
+    fragments.put(R.id.navigation_home, RecyclerViewFragment.newInstance())
     fragments.put(R.id.navigation_dashboard, ScrollViewFragment.newInstance())
     fragments.put(R.id.navigation_notifications, ScrollViewFragment.newInstance())
+
+    val tag = "Player:Material"
+    playable = Toro.with(this).setUp(videoUri).tag(tag).asPlayable()
+  }
+
+  override fun requirePlayable(): Playable {
+    return this.playable
+  }
+
+  override fun requirePlayableTag(): String {
+    return "Player:Material"
   }
 }

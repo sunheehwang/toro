@@ -17,25 +17,94 @@
 package toro.v4;
 
 import android.app.Application;
+import android.net.Uri;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.ui.PlayerView;
+import im.ene.toro.ToroPlayer;
 import im.ene.toro.exoplayer.Config;
 import im.ene.toro.media.PlaybackInfo;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * Re-usable object. Once created, will live with {@link Application} lifetime.
+ * Re-usable object. Once created, will live with {@link Application} lifecycle.
+ *
+ * Design concept: '[Playable] --> [Target --> Playback]'
+ *
+ * - Target can be: PlayerView, VideoView, Object?, etc.
+ *
+ * - Playback: manage lifecycle of Target. One Target can be managed by up to one Playback at a time.
+ * The state where one Target belongs to two Playbacks can only be the time of attaching/detaching
+ * Target (a.k.a Target transaction).
+ *
+ * - Playable: should be able to passed around without interrupting the media playback (or at least,
+ * audio playback). If a Playable is played 'into' a PlayerView/VideoView/Surface/Texture, it is
+ * expected to have Video playback being interrupted when switching Target. Also, a single Playable
+ * can be played 'into' different types of Target. In that case, implementation of Playable must
+ * guarantee the consistency of Playable's PlaybackInfo.
+ *
+ * [Added 2018/06/19]
+ * ...
+ * [Removed 2018/06/22]
  *
  * @author eneim (2018/05/25).
  * @since 4.0.0.2800
  */
 public interface Playable {
 
+  // Reasons for a pausing.
+  @Retention(RetentionPolicy.SOURCE)  //
+  @IntDef({ Reason.REASON_UNKNOWN, Reason.REASON_DETACHED, Reason.REASON_BAD_TOKEN })  //
+  @interface Reason {
+    int REASON_UNKNOWN = 0;
+    int REASON_DETACHED = 1;
+    int REASON_BAD_TOKEN = 2;
+  }
+
+  final class Bundle {
+    @NonNull final Uri uri;
+    @NonNull final Options options;
+
+    Bundle(@NonNull Uri uri, @NonNull Options options) {
+      this.uri = uri;
+      this.options = options;
+    }
+
+    @Override public boolean equals(Object o) {
+      if (this == o) return true;
+      if (o == null || getClass() != o.getClass()) return false;
+
+      Bundle bundle = (Bundle) o;
+
+      if (!uri.equals(bundle.uri)) return false;
+      return options.equals(bundle.options);
+    }
+
+    @Override public int hashCode() {
+      int result = uri.hashCode();
+      result = 31 * result + options.hashCode();
+      return result;
+    }
+  }
+
   final class Options {
+    final void copyFrom(@NonNull Options options) {
+      this.config = options.config;
+      this.playbackInfo = options.playbackInfo;
+      this.mediaType = options.mediaType;
+      this.tag = options.tag;
+      this.repeatMode = options.repeatMode;
+    }
+
     @NonNull Config config = new Config.Builder().build();
     @NonNull PlaybackInfo playbackInfo = PlaybackInfo.SCRAP;
     @Nullable String mediaType = null;
     @Nullable Object tag = null;
+    boolean alwaysLoad = false;
+    @Player.RepeatMode int repeatMode = Player.REPEAT_MODE_OFF;
 
     @Override public boolean equals(Object o) {
       if (this == o) return true;
@@ -58,26 +127,87 @@ public interface Playable {
     }
   }
 
-  @NonNull Playable config(@NonNull Config config);
+  final class Builder {
 
-  // Init the Playback with a pre-defined PlaybackInfo
-  @NonNull Playable playbackInfo(@NonNull PlaybackInfo playbackInfo);
+    final Toro toro;
+    @NonNull final Uri uri;
+    final Options options = new Options();
 
-  // Custom media type (file extension, etc)
-  @NonNull Playable mediaType(@Nullable String type);
+    public Builder(Toro toro, @NonNull Uri uri) {
+      this.toro = toro;
+      this.uri = uri;
+    }
 
-  // Non-null tag will ask Manager to save this Playable's state.
-  @NonNull Playable tag(@Nullable Object tag);
+    public Builder config(@NonNull Config config) {
+      this.options.config = config;
+      return this;
+    }
 
-  // Setting this will always override other options, regardless of the order.
-  // This method can be called many times. The last call wins.
-  @NonNull Playable options(@NonNull Options options);
+    public Builder playbackInfo(@NonNull PlaybackInfo playbackInfo) {
+      this.options.playbackInfo = playbackInfo;
+      return this;
+    }
+
+    public Builder tag(@NonNull Object tag) {
+      this.options.tag = tag;
+      return this;
+    }
+
+    public Builder repeatMode(@Player.RepeatMode int repeatMode) {
+      this.options.repeatMode = repeatMode;
+      return this;
+    }
+
+    public Builder mediaType(@Nullable String type) {
+      this.options.mediaType = type;
+      return this;
+    }
+
+    public Builder alwaysLoad(boolean alwaysLoad) {
+      this.options.alwaysLoad = alwaysLoad;
+      return this;
+    }
+
+    public Builder options(@NonNull Options options) {
+      this.options.copyFrom(options);
+      return this;
+    }
+
+    public Playable asPlayable() {
+      return this.toro.getPlayable(new Bundle(this.uri, this.options));
+    }
+  }
 
   /**
-   * Create a {@link Playback} object so that it can be played by a {@link PlayerView}.
+   * Create a {@link Playback} object to manages a {@link PlayerView}.
    *
    * @param playerView the {@link PlayerView} to play the content.
-   * @return the {@link Playback} object to control the playback.
    */
-  @NonNull Playback<PlayerView> into(@NonNull PlayerView playerView);
+  @NonNull Playback<PlayerView> bind(@NonNull PlayerView playerView);
+
+  /// Playback controller
+
+  void play();
+
+  void pause();
+
+  void release();
+
+  void prepare(boolean alwaysLoad);
+
+  boolean isPlaying();
+
+  /// TODO consider if we need these methods
+  void setPlaybackInfo(@NonNull PlaybackInfo playbackInfo);
+
+  @NonNull PlaybackInfo getPlaybackInfo();
+
+  void addVolumeChangeListener(@NonNull ToroPlayer.OnVolumeChangeListener listener);
+
+  void removeVolumeChangeListener(ToroPlayer.OnVolumeChangeListener listener);
+
+  //// Experiment
+
+  // TODO [20180622] Should be hidden to User. Consider to make Playable abstract class
+  void mayUpdateStatus(Manager manager, boolean active);
 }

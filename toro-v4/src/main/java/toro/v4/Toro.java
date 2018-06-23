@@ -28,20 +28,21 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.Process;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.view.ViewCompat;
 import android.view.View;
 import android.view.ViewTreeObserver.OnScrollChangedListener;
-import com.google.android.exoplayer2.util.Util;
-import im.ene.toro.ToroUtil;
 import im.ene.toro.exoplayer.ToroExo;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import toro.v4.Playback.RequestWeakReference;
 
 import static android.os.Process.THREAD_PRIORITY_BACKGROUND;
-import static java.lang.Runtime.getRuntime;
+import static im.ene.toro.ToroUtil.checkNotNull;
 
 /**
  * @author eneim (2018/05/25).
@@ -49,10 +50,6 @@ import static java.lang.Runtime.getRuntime;
  */
 @SuppressWarnings("WeakerAccess") //
 public final class Toro {
-
-  // Magic number: Build.VERSION.SDK_INT / 6 --> API 16 ~ 18 will set pool size to 2, etc.
-  @SuppressWarnings("WeakerAccess") //
-  static final int MAX_POOL_SIZE = Math.max(Util.SDK_INT / 6, getRuntime().availableProcessors());
 
   final Context app;
   final ToroExo toroExo;
@@ -63,16 +60,24 @@ public final class Toro {
   final WeakHashMap<Context, Manager> managers;
   final WeakHashMap<Context, Bundle> states;
 
+  // [20180620] Lately I'm coding JS too much, so there is Store and stuff ...
+  // To store all Playable with its bundle.
+  final HashMap<Playable.Bundle, Playable> playableStore;
+  final HashMap<String, Playable> playablePacks;
+
   Toro(@NonNull Context app) {
-    this.app = ToroUtil.checkNotNull(app).getApplicationContext();
+    this.app = checkNotNull(app).getApplicationContext();
     this.toroExo = ToroExo.with(app);
     this.managers = new WeakHashMap<>();
     this.states = new WeakHashMap<>();
 
+    this.playableStore = new HashMap<>();
+    this.playablePacks = new HashMap<>();
+
     ((Application) this.app).registerActivityLifecycleCallbacks(new ActivityLifecycleCallbacks() {
       @Override public void onActivityCreated(Activity activity, Bundle state) {
         Bundle playbackCache = state != null ? state.getBundle(KEY_ACTIVITY_STATES) : null;
-        states.put(activity, playbackCache);
+        states.put(activity, playbackCache);  // accept null, just won't use it.
       }
 
       @Override public void onActivityStarted(Activity activity) {
@@ -95,16 +100,25 @@ public final class Toro {
 
       @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
         Manager manager = managers.get(activity);
-        Bundle playbackState = manager != null ? manager.fetchPlayableInfoBundle() : null;
-        if (playbackState != null) {
-          outState.putBundle(KEY_ACTIVITY_STATES, playbackState);
-        }
+        Bundle playbackState = manager != null ? manager.onSavePlaybackInfo() : null;
+        if (playbackState != null) outState.putBundle(KEY_ACTIVITY_STATES, playbackState);
       }
 
-      // TODO [20180527] This method is called before DecorView is detached.
+      // [20180527] This method is called before DecorView is detached.
       @Override public void onActivityDestroyed(Activity activity) {
         Manager manager = managers.remove(activity);
-        if (manager != null) manager.onDestroy();
+        if (manager != null) manager.onDestroy(activity.isChangingConfigurations());
+
+        //ArrayList<Playable> temp = new ArrayList<>();
+        //for (Manager m : managers.values()) {
+        //  temp.addAll(m.playablesThisActiveTo);
+        //}
+        //
+        //ArrayList<Playable> toRelease = new ArrayList<>(toro.playableStore.values());
+        //toRelease.removeAll(temp);
+        //for (Playable playable : toRelease) {
+        //  playable.release();
+        //}
       }
     });
 
@@ -129,13 +143,15 @@ public final class Toro {
   }
 
   /**
+   * TODO [20180622] Support other kinds of Context too, eg: Service.
+   *
    * Get the {@link Manager} for an {@link Activity} or create new if there is no cached one.
    *
    * @param context the {@link Activity}.
    * @return the {@link Manager} to manages {@link Playback}s of the {@link Activity}.
    */
   @NonNull final Manager getManager(@NonNull Context context) {
-    if (!(context instanceof Activity)) {
+    if (!(checkNotNull(context) instanceof Activity)) {
       throw new RuntimeException("Expect Activity, found: " + context.getClass().getSimpleName());
     }
 
@@ -148,9 +164,6 @@ public final class Toro {
     if (manager == null) {
       manager = new Manager(this, decorView);
       managers.put(context, manager);
-      Bundle cache = states.get(context);
-      if (cache != null) manager.providePlayableInfoBundle(cache);
-
       if (ViewCompat.isAttachedToWindow(decorView)) {
         manager.onAttached();
       }
@@ -159,16 +172,32 @@ public final class Toro {
           new ManagerAttachStateListener(context, decorView, manager.attachFlag));
     }
 
+    Bundle cache = states.get(context);
+    if (cache != null) manager.onInitialized(cache);
     return manager;
   }
 
-  /// START Public API
+  @NonNull final Playable getPlayable(@NonNull Playable.Bundle bundle) {
+    Playable playable = this.playableStore.get(bundle);
+    if (playable == null) {
+      playable = new Playee(this, bundle);
+      this.playableStore.put(bundle, playable);
+    }
 
-  public final Playable play(@NonNull Uri uri) {
-    return new PlayableImpl(this, uri);
+    return playable;
   }
 
-  /// END Public API
+  /// [START Public API]
+
+  public final Playable.Builder setUp(@NonNull Uri uri) {
+    return new Playable.Builder(this, uri);
+  }
+
+  @Nullable public final Playable requirePlayable(@NonNull String key) {
+    return this.playablePacks.get(checkNotNull(key));
+  }
+
+  /// [END Public API]
 
   static class ManagerAttachStateListener implements View.OnAttachStateChangeListener {
 
@@ -239,6 +268,7 @@ public final class Toro {
     @Override public void onScrollChanged() {
       scrollConsumed.set(false);
       handler.removeMessages(EVENT_IDLE);
+      handler.removeMessages(EVENT_SCROLL);
       handler.sendEmptyMessageDelayed(EVENT_SCROLL, EVENT_DELAY);
     }
   }
@@ -250,7 +280,7 @@ public final class Toro {
    * gets added to the reference queue. This thread empties the reference queue and cancels the
    * request.
    */
-  static final int REQUEST_GCED = 3;
+  static final int REQUEST_GCED = 1;
   static final Handler HANDLER = new Handler(Looper.getMainLooper()) {
     @Override public void handleMessage(Message msg) {
       int what = msg.what;

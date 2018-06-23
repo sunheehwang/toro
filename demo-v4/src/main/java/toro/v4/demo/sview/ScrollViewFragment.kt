@@ -16,14 +16,18 @@
 
 package toro.v4.demo.sview
 
-import android.net.Uri
+import android.content.Context
 import android.os.Bundle
 import android.support.v4.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import toro.v4.Toro
+import kotlinx.android.synthetic.main.fragment_scroll_view.playerView
+import kotlinx.android.synthetic.main.fragment_scroll_view.playerViewContainer
+import toro.v4.Playable
+import toro.v4.demo.PlayableProvider
 import toro.v4.demo.R
+import toro.v4.demo.fsplayer.SinglePlayerActivity
 
 /**
  * @author eneim (2018/05/27).
@@ -34,9 +38,16 @@ class ScrollViewFragment : Fragment() {
     fun newInstance() = ScrollViewFragment()
   }
 
-  private val videoUri: Uri =
-      Uri.parse(
-          "https://storage.googleapis.com/material-design/publish/material_v_12/assets/0B14F_FSUCc01SWc0N29QR3pZT2s/materialmotionhero-spec-0505.mp4")
+  private lateinit var playable: Playable
+  private lateinit var playableTag: String
+
+  override fun onAttach(context: Context?) {
+    super.onAttach(context)
+    if (context is PlayableProvider) {
+      playable = context.requirePlayable()
+      playableTag = context.requirePlayableTag()
+    }
+  }
 
   override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
       savedInstanceState: Bundle?): View? {
@@ -45,8 +56,9 @@ class ScrollViewFragment : Fragment() {
 
   override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
     super.onViewCreated(view, savedInstanceState)
-    Toro.with(requireContext()).play(videoUri)
-        .tag("Player1:" + hashCode())
-        .into(view.findViewById(R.id.playerView))
+    playable.bind(playerView)
+    playerViewContainer.setOnClickListener {
+      startActivity(SinglePlayerActivity.createIntent(requireContext(), playableTag))
+    }
   }
 }

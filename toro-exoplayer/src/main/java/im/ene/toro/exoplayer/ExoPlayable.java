@@ -16,7 +16,6 @@
 
 package im.ene.toro.exoplayer;
 
-import android.content.Context;
 import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -125,13 +124,11 @@ public class ExoPlayable extends PlayableImpl {
       if (selector instanceof DefaultTrackSelector) {
         MappedTrackInfo trackInfo = ((DefaultTrackSelector) selector).getCurrentMappedTrackInfo();
         if (trackInfo != null) {
-          if (trackInfo.getTypeSupport(C.TRACK_TYPE_VIDEO)
-              == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
+          if (trackInfo.getTypeSupport(C.TRACK_TYPE_VIDEO) == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
             onErrorMessage(toro.getString(R.string.error_unsupported_video));
           }
 
-          if (trackInfo.getTypeSupport(C.TRACK_TYPE_AUDIO)
-              == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
+          if (trackInfo.getTypeSupport(C.TRACK_TYPE_AUDIO) == RENDERER_SUPPORT_UNSUPPORTED_TRACKS) {
             onErrorMessage(toro.getString(R.string.error_unsupported_audio));
           }
         }

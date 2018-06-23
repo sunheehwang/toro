@@ -17,15 +17,26 @@
 package toro.v4.demo
 
 import android.app.Application
+import com.google.android.exoplayer2.upstream.cache.LeastRecentlyUsedCacheEvictor
+import com.google.android.exoplayer2.upstream.cache.SimpleCache
 import com.squareup.leakcanary.LeakCanary
+import im.ene.toro.exoplayer.Config
 
 /**
  * @author eneim (2018/05/27).
  */
 class DemoApp : Application() {
 
+  companion object {
+    var app: DemoApp? = null
+    var config: Config = Config.Builder().build()
+  }
+
   override fun onCreate() {
     super.onCreate()
+    app = this
+    config = config.newBuilder().setCache(
+        SimpleCache(cacheDir, LeastRecentlyUsedCacheEvictor(8 * 1024 * 1024))).build()
     if (LeakCanary.isInAnalyzerProcess(this)) {
       return
     }

@@ -16,7 +16,10 @@
 
 package toro.v4;
 
-import java.util.Comparator;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author eneim (2018/05/26).
@@ -26,16 +29,36 @@ final class Utils {
     throw new RuntimeException("");
   }
 
-  static final Comparator<Playback.LocToken> CENTER_Y = new Comparator<Playback.LocToken>() {
-    @Override public int compare(Playback.LocToken o1, Playback.LocToken o2) {
-      return Float.compare(o1.centerY, o2.centerY);
-    }
-  };
-
   @SuppressWarnings("SameParameterValue") //
   static void checkSize(int size, int maxSize) {
     if (size > maxSize) {
       throw new IllegalStateException("Expected up to: " + maxSize + ", have: " + size);
     }
+  }
+
+  interface Predicate<T> {
+    boolean accept(T t);
+  }
+
+  @Nullable static <T> T findOne(Iterable<T> items, Predicate<T> predicate) {
+    T result = null;
+    for (T item : items) {
+      if (predicate.accept(item)) {
+        result = item;
+        break;
+      }
+    }
+
+    return result;
+  }
+
+  @NonNull static <T> List<T> findAll(Iterable<T> items, Predicate<T> predicate) {
+    List<T> results = new ArrayList<>();
+    for (T item : items) {
+      if (predicate.accept(item)) {
+        results.add(item);
+      }
+    }
+    return results;
   }
 }

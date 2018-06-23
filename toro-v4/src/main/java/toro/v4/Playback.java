@@ -17,13 +17,15 @@
 package toro.v4;
 
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Message;
 import android.support.annotation.CallSuper;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.ToroUtil;
-import im.ene.toro.media.PlaybackInfo;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.ReferenceQueue;
@@ -41,17 +43,10 @@ public abstract class Playback<T> {
 
   protected String TAG;
 
-  // Location on screen, with visible offset within target's parent.
-  // Would be null if the Target is not a View.
-  static class LocToken {
-    final float centerX;
-    final float centerY;
-    final float areaOffset;
+  public static class Token implements Comparable<Token> {
 
-    LocToken(float centerX, float centerY, float areaOffset) {
-      this.centerX = centerX;
-      this.centerY = centerY;
-      this.areaOffset = areaOffset;
+    @Override public int compareTo(@NonNull Token o) {
+      return 0;
     }
   }
 
@@ -73,38 +68,66 @@ public abstract class Playback<T> {
     int STATE_END = 4;
   }
 
+  protected final Handler handler = new Handler(new Handler.Callback() {
+    @Override public boolean handleMessage(Message msg) {
+      Log.i(TAG, "handleMessage() called with: msg = [" + msg + "]");
+      boolean playWhenReady = (boolean) msg.obj;
+      switch (msg.what) {
+        case State.STATE_IDLE:
+          break;
+        case State.STATE_BUFFERING /* Player.STATE_BUFFERING */:
+          for (ToroPlayer.EventListener listener : listeners) {
+            listener.onBuffering();
+          }
+          break;
+        case State.STATE_READY /*  Player.STATE_READY */:
+          for (ToroPlayer.EventListener listener : listeners) {
+            if (playWhenReady) {
+              listener.onPlaying();
+            } else {
+              listener.onPaused();
+            }
+          }
+          break;
+        case State.STATE_END /* Player.STATE_ENDED */:
+          for (ToroPlayer.EventListener listener : listeners) {
+            listener.onCompleted();
+          }
+          break;
+        default:
+          break;
+      }
+      return true;
+    }
+  });
+
   protected final HashSet<ToroPlayer.EventListener> listeners = new HashSet<>();
-  protected final HashSet<ToroPlayer.OnVolumeChangeListener> volumeListener = new HashSet<>();
+  protected final HashSet<Callback> callbacks = new HashSet<>();
 
   @NonNull protected final Manager manager;
-  @NonNull protected final Uri uri;
+  @NonNull protected final Playable playable;
   @NonNull protected final Playable.Options options;
+  @NonNull protected final Uri uri;
 
   @NonNull private final Object tag;
   @Nullable private final WeakReference<T> target;
 
-  protected Playback(@NonNull Uri uri, @NonNull Manager manager, @Nullable T target,
-      @NonNull Playable.Options options) {
+  protected Playback(@NonNull Playable playable, @NonNull Uri uri, @NonNull Manager manager,
+      @Nullable T target, @NonNull Playable.Options options) {
+    this.playable = playable;
     this.uri = uri;
     this.manager = manager;
     this.target = target == null ? null
         : new RequestWeakReference<>(this, target, manager.toro.referenceQueue);
     this.tag = (options.tag != null ? options.tag : this);
     this.options = options;
-    TAG = "Toro:Playback@" + hashCode();
+    TAG = "Toro:Playable@" + playable.hashCode();
   }
 
-  @Nullable final T getTarget() {
-    return target == null ? null : target.get();
-  }
-
-  @NonNull final Object getTag() {
-    return tag;
-  }
-
-  // Only playback with 'valid tag' will be cached for restoring.
-  final boolean validTag() {
-    return this.tag != this;
+  // Used by subclasses to dispatch internal event listeners
+  @SuppressWarnings("WeakerAccess") //
+  protected final void dispatchPlayerStateChanged(boolean playWhenReady, @State int playbackState) {
+    handler.obtainMessage(playbackState, playWhenReady).sendToTarget();
   }
 
   public final void addListener(@NonNull ToroPlayer.EventListener listener) {
@@ -115,52 +138,80 @@ public abstract class Playback<T> {
     this.listeners.remove(listener);
   }
 
-  public final void addVolumeChangeListener(@NonNull ToroPlayer.OnVolumeChangeListener listener) {
-    this.volumeListener.add(ToroUtil.checkNotNull(listener));
+  public final void addCallback(@NonNull Callback callback) {
+    this.callbacks.add(ToroUtil.checkNotNull(callback));
   }
 
-  public final void removeVolumeChangeListener(ToroPlayer.OnVolumeChangeListener listener) {
-    this.volumeListener.remove(listener);
+  public final void removeCallback(@Nullable Callback callback) {
+    this.callbacks.remove(callback);
   }
 
-  @SuppressWarnings("SameParameterValue") //
-  abstract void prepare(boolean prepareSource);
-
-  abstract void play();
-
-  abstract void pause();
-
-  // TODO FIXME clarify when to call this.
-  abstract void release();
-
-  abstract boolean isPlaying();
-
-  // Return null LocToken will indicate that this Playback cannot start a playback.
-  @Nullable abstract LocToken getLocToken();
-
-  abstract void setPlaybackInfo(PlaybackInfo playbackInfo);
-
-  abstract PlaybackInfo getPlaybackInfo();
+  // Return null Token will indicate that this Playback cannot start.
+  // Token is comparable.
+  @Nullable protected Token getToken() {
+    return null;
+  }
 
   /// internal APIs
+
+  @Nullable public final T getTarget() {
+    return target == null ? null : target.get();
+  }
+
+  @NonNull public final Object getTag() {
+    return tag;
+  }
+
+  // Only playback with 'valid tag' will be cached for restoring.
+  final boolean validTag() {
+    return this.tag != this;
+  }
+
+  void pause() {
+    if (this.manager.playablesThisActiveTo.contains(playable)) {
+      playable.pause();
+    }
+  }
 
   // being added to Manager
   // the target may not be attached to View/Window.
   @CallSuper void onAdded() {
-    // No ops
+    for (Callback callback : this.callbacks) {
+      callback.onAdded(this);
+    }
   }
 
   // being removed from Manager
-  @CallSuper void onRemoved() {
-    // No ops
+  @CallSuper void onRemoved(boolean recreating) {
+    for (Callback callback : this.callbacks) {
+      callback.onRemoved(this, recreating);
+    }
+    this.listeners.clear();
+    this.callbacks.clear();
   }
 
   // ~ View is attached
   @CallSuper void onActive() {
-    // No ops
+    for (Callback callback : this.callbacks) {
+      callback.onActive(this);
+    }
   }
 
   @CallSuper void onInActive() {
-    // No ops
+    handler.removeCallbacksAndMessages(null);
+    for (Callback callback : this.callbacks) {
+      callback.onInActive(this);
+    }
+  }
+
+  public interface Callback {
+
+    void onAdded(Playback playback);
+
+    void onActive(Playback playback);
+
+    void onInActive(Playback playback);
+
+    void onRemoved(Playback playback, boolean recreating);
   }
 }

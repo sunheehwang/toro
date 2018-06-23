@@ -194,6 +194,10 @@ public interface Playable {
    */
   @Nullable PlaybackParameters getParameters();
 
+  void setRepeatMode(@Player.RepeatMode int repeatMode);
+
+  @Player.RepeatMode int getRepeatMode();
+
   // Combine necessary interfaces.
   interface EventListener extends Player.EventListener, VideoListener, TextOutput, MetadataOutput {
 
