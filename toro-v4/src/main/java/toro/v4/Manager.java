@@ -58,8 +58,11 @@ final class Manager {
   final AtomicBoolean attachFlag;
   final int maxConcurrentPlayers = 1;
 
+  // It is this Manager's response to clean this.
+  @NonNull final HashMap<Playable, Object> mapPlayableToTarget;
+
   // Map WeakReference of the Target to the Playback.
-  @NonNull private final WeakHashMap<Object, Playback> mapTargetToPlayback;
+  @NonNull final WeakHashMap<Object, Playback> mapTargetToPlayback;
 
   // Manage playback state of Playback that has valid tag
   @NonNull private final HashMap<Object, PlaybackInfo> mapPlayableTagToInfo;
@@ -87,6 +90,7 @@ final class Manager {
     this.mapPlayableTagToInfo = new HashMap<>();
     this.mapAttachedPlaybackToTime = new HashMap<>();
     this.mapDetachedPlaybackToTime = new HashMap<>();
+    this.mapPlayableToTarget = new HashMap<>();
     TAG = "Toro:Manager@" + hashCode();
   }
 
@@ -150,8 +154,8 @@ final class Manager {
   void onStop() {
     Log.d(TAG, "onStop() called");
     for (Playback playback : mapAttachedPlaybackToTime.keySet()) {
-      playback.playable.mayUpdateStatus(this, false);
       playback.pause();
+      playback.playable.mayUpdateStatus(this, false);
     }
     // Put it here for future warning.
     // [20180620] Don't call this, as it may change the reason we pause the playback.
@@ -178,6 +182,8 @@ final class Manager {
       preparePlaybackDestroy(playback, recreating);
       iterator.remove();
     }
+
+    mapPlayableToTarget.clear();
   }
 
   /* [END] Manager lifecycle */
@@ -298,6 +304,7 @@ final class Manager {
           oldPlayback.onRemoved(false);
         }
       }
+      playback.playable.mayUpdateStatus(this, true);
       playback.onAdded();
     }
 
@@ -356,9 +363,9 @@ final class Manager {
 
   // Called when a Playback's target is detached. Eg: PlayerView is detached from window.
   <T> void onTargetInActive(T target) {
-    Log.d(TAG, "onTargetInActive() called with: target = [" + target + "]");
     long now = System.nanoTime();
     Playback playback = mapTargetToPlayback.get(target);
+    Log.d(TAG, "onTargetInActive() called with: target = [" + target + "], playback: " + playback);
     if (playback != null) {
       // TODO [20180620] double check if we should save state of this Playback or not.
       savePlayableState(playback);

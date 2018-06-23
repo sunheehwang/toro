@@ -97,13 +97,14 @@ final class Playee implements Playable, Playback.Callback {
 
   @NonNull @Override public Playback<PlayerView> bind(@NonNull PlayerView playerView) {
     Manager manager = toro.getManager(ToroUtil.checkNotNull(playerView).getContext());
-    this.mayUpdateStatus(manager, true);
-
-    Playback<PlayerView> playback = /* manager.findPlayback(this) */ null;
-    if (playback == null) {
-      playback = new ViewPlayback<>(this, uri, manager, playerView, options);
+    Object oldTarget = manager.mapPlayableToTarget.put(this, playerView);
+    if (oldTarget != null) {
+      Playback oldPlayback = manager.mapTargetToPlayback.remove(oldTarget);
+      if (oldPlayback != null) {
+        manager.removePlayback(oldPlayback);
+      }
     }
-
+    Playback<PlayerView> playback = new ViewPlayback<>(this, uri, manager, playerView, options);
     playback.addCallback(this);
     if (playback.validTag()) {
       toro.playablePacks.put(playback.getTag().toString(), this);
