@@ -19,7 +19,6 @@ package toro.v4;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.Log;
 import android.view.View;
 import com.google.android.exoplayer2.ui.PlayerView;
@@ -57,6 +56,8 @@ final class Manager {
   final AtomicBoolean scrolling = new AtomicBoolean(false);
   final AtomicBoolean attachFlag;
   final int maxConcurrentPlayers = 1;
+
+  private Dispatcher dispatcher;
 
   // It is this Manager's response to clean this.
   @NonNull final HashMap<Playable, Object> mapPlayableToTarget;
@@ -120,11 +121,13 @@ final class Manager {
       playback.playable.mayUpdateStatus(this, true);
       playback.onActive();
     }
-    performRefreshAll();
+    this.dispatchRefreshAll();
   }
 
   // Get called when the DecorView is attached to Window
   void onAttached() {
+    if (dispatcher == null) dispatcher = new Dispatcher(this);
+
     Log.d(TAG, "onAttached() called");
     if (attachFlag.compareAndSet(false, true)) {
       // Do something on the first time this Manager is attached.
@@ -134,7 +137,7 @@ final class Manager {
       }
 
       // Has attached playbacks, and not scrolling, then try refreshing everything.
-      if (mapAttachedPlaybackToTime.size() > 0 && !isScrolling()) this.performRefreshAll();
+      if (mapAttachedPlaybackToTime.size() > 0 && !isScrolling()) this.dispatchRefreshAll();
     }
   }
 
@@ -147,6 +150,11 @@ final class Manager {
         this.decorView.getViewTreeObserver().removeOnScrollChangedListener(scrollChangeListener);
         this.scrollChangeListener = null;
       }
+    }
+
+    if (dispatcher != null) {
+      dispatcher.removeCallbacksAndMessages(null);
+      dispatcher = null;
     }
   }
 
@@ -219,12 +227,10 @@ final class Manager {
 
   // Important. Do the refresh stuff. Change the playback items, etc.
   void performRefreshAll() {
-    Log.d(TAG, "performRefreshAll() called");
+    Log.e(TAG, "performRefreshAll() called");
     candidates.clear();
     // List of all possible candidates.
     ArrayList<Playback> playbacks = new ArrayList<>(mapAttachedPlaybackToTime.keySet());
-    Log.w(TAG, "attached: " + mapAttachedPlaybackToTime.keySet());
-    Log.e(TAG, "detached: " + mapDetachedPlaybackToTime.keySet());
     for (Playback playback : playbacks) {
       Playback.Token token = playback.getToken();
       // Doing this will sort the playback using LocToken's center Y value.
@@ -240,7 +246,6 @@ final class Manager {
 
     playbacks.removeAll(toPlay);
     playbacks.addAll(mapDetachedPlaybackToTime.keySet());
-    Log.i(TAG, "toPause: " + playbacks);
     // Keep only non-play-candidate ones, and pause them.
     for (Playback playback : playbacks) {
       playback.pause();
@@ -262,16 +267,6 @@ final class Manager {
     if (playback != null) {
       removePlayback(playback);
     }
-  }
-
-  @Nullable <T> Playback<T> findPlayback(final Playable playable) {
-    if (!this.playablesThisActiveTo.contains(playable)) return null;
-    //noinspection unchecked
-    return Utils.findOne(this.mapAttachedPlaybackToTime.keySet(), new Utils.Predicate<Playback>() {
-      @Override public boolean accept(Playback playback) {
-        return playable == playback.playable;
-      }
-    });
   }
 
   /**
@@ -311,7 +306,7 @@ final class Manager {
     // In case we are adding nothing new, and the playback is already there.
     if (mapAttachedPlaybackToTime.containsKey(playback)) {
       // shouldQueue is true when the target is not null and no pre-exist playback.
-      if (shouldQueue && playback.getToken() != null) performRefreshAll();
+      if (shouldQueue && playback.getToken() != null) this.dispatchRefreshAll();
     }
 
     return playback;
@@ -355,7 +350,7 @@ final class Manager {
       mapAttachedPlaybackToTime.put(playback, now);
       mapDetachedPlaybackToTime.remove(playback);
       playback.onActive();
-      performRefreshAll();
+      this.dispatchRefreshAll();
     } else {
       throw new IllegalStateException("No Playback found for target.");
     }
@@ -371,7 +366,8 @@ final class Manager {
       savePlayableState(playback);
       mapDetachedPlaybackToTime.put(playback, now);
       mapAttachedPlaybackToTime.remove(playback);
-      performRefreshAll();
+      playback.pause();
+      this.dispatchRefreshAll();
       playback.onInActive();
     }
   }
@@ -379,6 +375,13 @@ final class Manager {
   // Called when something has changed about the Playback. Eg: playback's target has layout change.
   <T> void onPlaybackInternalChanged(Playback<T> playback) {
     Log.d(TAG, "onPlaybackInternalChanged() called with: playback = [" + playback + "]");
-    if (playback.getToken() != null) performRefreshAll();
+    if (playback.getToken() != null) this.dispatchRefreshAll();
+  }
+
+  //// Using Dispatcher
+
+  void dispatchRefreshAll() {
+    Log.w(TAG, "dispatchRefreshAll() called");
+    if (dispatcher != null) dispatcher.dispatchRefreshAll();
   }
 }

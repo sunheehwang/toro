@@ -35,7 +35,6 @@ import android.view.ViewTreeObserver.OnScrollChangedListener;
 import im.ene.toro.exoplayer.ToroExo;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -255,11 +254,12 @@ public final class Toro {
         switch (msg.what) {
           case EVENT_SCROLL:
             container.setScrolling(true);
+            handler.removeMessages(EVENT_IDLE);
             handler.sendEmptyMessageDelayed(EVENT_IDLE, EVENT_DELAY);
             break;
           case EVENT_IDLE:
             container.setScrolling(false);
-            if (scrollConsumed.compareAndSet(false, true)) container.performRefreshAll();
+            if (scrollConsumed.compareAndSet(false, true)) container.dispatchRefreshAll();
             break;
         }
       }
@@ -267,7 +267,6 @@ public final class Toro {
 
     @Override public void onScrollChanged() {
       scrollConsumed.set(false);
-      handler.removeMessages(EVENT_IDLE);
       handler.removeMessages(EVENT_SCROLL);
       handler.sendEmptyMessageDelayed(EVENT_SCROLL, EVENT_DELAY);
     }
