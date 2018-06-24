@@ -94,7 +94,7 @@ public final class Toro {
 
       @Override public void onActivityStopped(Activity activity) {
         Manager manager = managers.get(activity);
-        if (manager != null) manager.onStop();
+        if (manager != null) manager.onStop(activity.isChangingConfigurations());
       }
 
       @Override public void onActivitySaveInstanceState(Activity activity, Bundle outState) {
@@ -107,17 +107,6 @@ public final class Toro {
       @Override public void onActivityDestroyed(Activity activity) {
         Manager manager = managers.remove(activity);
         if (manager != null) manager.onDestroy(activity.isChangingConfigurations());
-
-        //ArrayList<Playable> temp = new ArrayList<>();
-        //for (Manager m : managers.values()) {
-        //  temp.addAll(m.playablesThisActiveTo);
-        //}
-        //
-        //ArrayList<Playable> toRelease = new ArrayList<>(toro.playableStore.values());
-        //toRelease.removeAll(temp);
-        //for (Playable playable : toRelease) {
-        //  playable.release();
-        //}
       }
     });
 
@@ -172,7 +161,7 @@ public final class Toro {
     }
 
     Bundle cache = states.get(context);
-    if (cache != null) manager.onInitialized(cache);
+    manager.onInitialized(cache);
     return manager;
   }
 

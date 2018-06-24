@@ -24,7 +24,6 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.view.ViewCompat;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
@@ -72,24 +71,20 @@ class ViewPlayback<V extends View> extends Playback<V>
   @SuppressWarnings("WeakerAccess") //
   final ToroPlayer.EventListener listener = new ToroPlayer.EventListener() {
     @Override public void onBuffering() {
-      Log.d(TAG, "onBuffering() called");
       // do nothing
     }
 
     @Override public void onPlaying() {
-      Log.d(TAG, "onPlaying() called");
       // do nothing
       View target = getTarget();
       if (target != null) target.setKeepScreenOn(true);
     }
 
     @Override public void onPaused() {
-      Log.d(TAG, "onPaused() called");
       // do nothing
     }
 
     @Override public void onCompleted() {
-      Log.d(TAG, "onCompleted() called");
       View target = getTarget();
       if (target != null) target.setKeepScreenOn(false);
     }
@@ -101,7 +96,6 @@ class ViewPlayback<V extends View> extends Playback<V>
   ViewPlayback(@NonNull Playable playable, @NonNull Uri uri, @NonNull Manager manager,
       @Nullable V target, @NonNull Playable.Options options) {
     super(playable, uri, manager, target, options);
-    Log.i(TAG, "Playback: " + this.playable);
   }
 
   @CallSuper @Override void onAdded() {
@@ -167,14 +161,12 @@ class ViewPlayback<V extends View> extends Playback<V>
   }
 
   @Nullable @Override protected ViewToken getToken() {
-    Log.d(TAG, "getToken() called");
     View target = super.getTarget();
     if (target == null || !this.targetAttached.get()) return null;
 
     Rect playerRect = new Rect();
     boolean visible = target.getGlobalVisibleRect(playerRect, new Point());
     if (!visible) return null;
-    Log.d(TAG, "getToken: " + playerRect);
 
     Rect drawRect = new Rect();
     target.getDrawingRect(drawRect);
@@ -185,7 +177,6 @@ class ViewPlayback<V extends View> extends Playback<V>
       int visibleArea = playerRect.height() * playerRect.width();
       offset = visibleArea / (float) drawArea;
     }
-    Log.i(TAG, "getToken: " + offset);
     return offset >= 0.75f /* TODO [20180621] make this changeable */ ?  //
         new ViewToken(playerRect.centerX(), playerRect.centerY(), offset) : null;
   }

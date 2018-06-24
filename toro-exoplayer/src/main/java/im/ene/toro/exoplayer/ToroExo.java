@@ -97,7 +97,7 @@ public final class ToroExo {
   @NonNull private final Map<Config, ExoCreator> creators;
   @NonNull private final Map<ExoCreator, Pools.Pool<SimpleExoPlayer>> playerPools;
 
-  private Config defaultConfig; // will be created on the first time it is used.
+  private final Config defaultConfig = Config.DEFAULT;
 
   private ToroExo(@NonNull Context context /* Application context */) {
     this.context = context;
@@ -127,7 +127,6 @@ public final class ToroExo {
   }
 
   public final Config getDefaultConfig() {
-    if (defaultConfig == null) defaultConfig = new Config.Builder().build();
     return defaultConfig;
   }
 

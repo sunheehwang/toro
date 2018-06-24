@@ -19,14 +19,13 @@ package toro.v4;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.util.Log;
+import android.support.annotation.Nullable;
 import android.view.View;
 import com.google.android.exoplayer2.ui.PlayerView;
 import im.ene.toro.media.PlaybackInfo;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
@@ -43,7 +42,6 @@ import static im.ene.toro.ToroUtil.checkNotNull;
 @SuppressWarnings("WeakerAccess") //
 final class Manager {
 
-  protected String TAG;
   static Comparator<Playback.Token> TOKEN_COMPARATOR = new Comparator<Playback.Token>() {
     @Override public int compare(Playback.Token o1, Playback.Token o2) {
       return o1.compareTo(o2);
@@ -92,13 +90,13 @@ final class Manager {
     this.mapAttachedPlaybackToTime = new HashMap<>();
     this.mapDetachedPlaybackToTime = new HashMap<>();
     this.mapPlayableToTarget = new HashMap<>();
-    TAG = "Toro:Manager@" + hashCode();
   }
 
   /* [BEGIN] Manager lifecycle */
 
   // Once created, the Activity bound to this Manager may have some saved state and want to provide.
-  void onInitialized(@NonNull Bundle cache) {
+  void onInitialized(@Nullable Bundle cache) {
+    if (cache == null) return;
     Object state = cache.getSerializable(Toro.KEY_MANAGER_STATES);
     if (state instanceof HashMap) {
       //noinspection unchecked
@@ -116,7 +114,6 @@ final class Manager {
     Therefore, handling Manager activeness of Playable requires some order handling.
    */
   void onStart() {
-    Log.d(TAG, "onStart() called");
     for (Playback playback : mapAttachedPlaybackToTime.keySet()) {
       playback.playable.mayUpdateStatus(this, true);
       playback.onActive();
@@ -128,7 +125,6 @@ final class Manager {
   void onAttached() {
     if (dispatcher == null) dispatcher = new Dispatcher(this);
 
-    Log.d(TAG, "onAttached() called");
     if (attachFlag.compareAndSet(false, true)) {
       // Do something on the first time this Manager is attached.
       if (this.scrollChangeListener == null) {
@@ -143,7 +139,6 @@ final class Manager {
 
   // Get called when the DecorView is detached from Window
   void onDetached() {
-    Log.d(TAG, "onDetached() called");
     if (attachFlag.compareAndSet(true, false)) {
       // Do something on the first time this Manager is detached.
       if (this.scrollChangeListener != null) {
@@ -159,11 +154,10 @@ final class Manager {
   }
 
   // Called when the Activity bound to this Manager is stopped.
-  void onStop() {
-    Log.d(TAG, "onStop() called");
+  void onStop(boolean configChange) {
     for (Playback playback : mapAttachedPlaybackToTime.keySet()) {
-      playback.pause();
-      playback.playable.mayUpdateStatus(this, false);
+      playback.onPause(configChange);
+      playback.playable.mayUpdateStatus(this, configChange);
     }
     // Put it here for future warning.
     // [20180620] Don't call this, as it may change the reason we pause the playback.
@@ -183,33 +177,26 @@ final class Manager {
   }
 
   void onDestroy(boolean recreating) {
-    // Iterating through the map, then remove the entry as well.
-    Iterator<Map.Entry<Object, Playback>> iterator = mapTargetToPlayback.entrySet().iterator();
-    while (iterator.hasNext()) {
-      Playback playback = iterator.next().getValue();
+    for (Playback playback : mapTargetToPlayback.values()) {
       preparePlaybackDestroy(playback, recreating);
-      iterator.remove();
     }
-
+    mapTargetToPlayback.clear();
     mapPlayableToTarget.clear();
   }
 
   /* [END] Manager lifecycle */
 
   void setScrolling(boolean scrolling) {
-    Log.d(TAG, "setScrolling() called with: scrolling = [" + scrolling + "]");
     this.scrolling.set(scrolling);
   }
 
   @SuppressWarnings("BooleanMethodIsAlwaysInverted")  //
   boolean isScrolling() {
-    Log.d(TAG, "isScrolling() called");
     return this.scrolling.get();
   }
 
   // called when a Playback becomes active, to restore last playback information.
   void restorePlayableState(@NonNull Playback playback) {
-    Log.d(TAG, "restorePlayableState() called with: playback = [" + playback + "]");
     if (playback.validTag()) {
       PlaybackInfo playbackInfo = mapPlayableTagToInfo.get(playback.getTag());
       if (playbackInfo != null) {
@@ -219,7 +206,6 @@ final class Manager {
   }
 
   void savePlayableState(@NonNull Playback playback) {
-    Log.d(TAG, "savePlayableState() called with: playback = [" + playback + "]");
     if (playback.validTag()) {
       mapPlayableTagToInfo.put(playback.getTag(), playback.playable.getPlaybackInfo());
     }
@@ -227,7 +213,6 @@ final class Manager {
 
   // Important. Do the refresh stuff. Change the playback items, etc.
   void performRefreshAll() {
-    Log.e(TAG, "performRefreshAll() called");
     candidates.clear();
     // List of all possible candidates.
     ArrayList<Playback> playbacks = new ArrayList<>(mapAttachedPlaybackToTime.keySet());
@@ -248,12 +233,12 @@ final class Manager {
     playbacks.addAll(mapDetachedPlaybackToTime.keySet());
     // Keep only non-play-candidate ones, and pause them.
     for (Playback playback : playbacks) {
-      playback.pause();
+      playback.onPause(false);
     }
     // Now kick play the play-candidate
     if (!isScrolling()) {
       for (Playback playback : toPlay) {
-        playback.playable.play();
+        playback.onPlay();
       }
     }
     // Clean up cache
@@ -262,7 +247,6 @@ final class Manager {
 
   // Cancel the behavior of a specific target. Called by GC thread.
   void cancel(Object target) {
-    Log.d(TAG, "cancel() called with: target = [" + target + "]");
     Playback playback = mapTargetToPlayback.remove(target);
     if (playback != null) {
       removePlayback(playback);
@@ -276,7 +260,6 @@ final class Manager {
    */
   @SuppressWarnings("UnusedReturnValue")  //
   <T> Playback<T> addPlayback(@NonNull Playback<T> playback) {
-    Log.d(TAG, "addPlayback() called with: playback = [" + playback + "]");
     T target = checkNotNull(playback).getTarget();
     boolean shouldQueue = target != null; // playback must have a valid target.
     if (shouldQueue) {
@@ -313,13 +296,8 @@ final class Manager {
   }
 
   private void preparePlaybackDestroy(Playback playback, boolean recreating) {
-    Log.d(TAG, "preparePlaybackDestroy() called with: playback = ["
-        + playback
-        + "], recreating = ["
-        + recreating
-        + "]");
     // savePlayableState(playback);
-    playback.pause();
+    playback.onPause(recreating);
     playback.onInActive();
     playback.onRemoved(recreating);
   }
@@ -331,7 +309,6 @@ final class Manager {
   // - mapDetachedPlaybackToTime
   // - mapPlayableTagToInfo
   void removePlayback(Playback playback) {
-    Log.d(TAG, "removePlayback() called with: playback = [" + playback + "]");
     mapAttachedPlaybackToTime.remove(playback);
     mapDetachedPlaybackToTime.remove(playback);
     mapTargetToPlayback.remove(playback.getTarget());
@@ -341,12 +318,11 @@ final class Manager {
 
   // Called when a Playback's target is attached. Eg: PlayerView is attached to window.
   <T> void onTargetActive(T target) {
-    Log.d(TAG, "onTargetActive() called with: target = [" + target + "]");
     long now = System.nanoTime();
     Playback playback = mapTargetToPlayback.get(target);
     if (playback != null) {
       // TODO [20180620] double check if we should restore state of this Playback or not.
-      restorePlayableState(playback);
+      // restorePlayableState(playback);
       mapAttachedPlaybackToTime.put(playback, now);
       mapDetachedPlaybackToTime.remove(playback);
       playback.onActive();
@@ -360,13 +336,12 @@ final class Manager {
   <T> void onTargetInActive(T target) {
     long now = System.nanoTime();
     Playback playback = mapTargetToPlayback.get(target);
-    Log.d(TAG, "onTargetInActive() called with: target = [" + target + "], playback: " + playback);
     if (playback != null) {
       // TODO [20180620] double check if we should save state of this Playback or not.
-      savePlayableState(playback);
+      // savePlayableState(playback);
       mapDetachedPlaybackToTime.put(playback, now);
       mapAttachedPlaybackToTime.remove(playback);
-      playback.pause();
+      playback.onPause(false);
       this.dispatchRefreshAll();
       playback.onInActive();
     }
@@ -374,14 +349,12 @@ final class Manager {
 
   // Called when something has changed about the Playback. Eg: playback's target has layout change.
   <T> void onPlaybackInternalChanged(Playback<T> playback) {
-    Log.d(TAG, "onPlaybackInternalChanged() called with: playback = [" + playback + "]");
     if (playback.getToken() != null) this.dispatchRefreshAll();
   }
 
   //// Using Dispatcher
 
   void dispatchRefreshAll() {
-    Log.w(TAG, "dispatchRefreshAll() called");
     if (dispatcher != null) dispatcher.dispatchRefreshAll();
   }
 }

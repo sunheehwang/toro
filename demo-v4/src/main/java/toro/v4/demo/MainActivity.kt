@@ -22,6 +22,7 @@ import android.support.design.widget.BottomNavigationView
 import android.support.v4.app.Fragment
 import android.support.v7.app.AppCompatActivity
 import android.util.SparseArray
+import com.google.android.exoplayer2.Player
 import kotlinx.android.synthetic.main.activity_main.navigation
 import toro.v4.Playable
 import toro.v4.Toro
@@ -35,7 +36,11 @@ class MainActivity : AppCompatActivity(), PlayableProvider {
       Uri.parse(
           "https://storage.googleapis.com/spec-host/mio-material/assets/1MvJxcu1kd5TFR6c5IBhxjLueQzSZvVQz/m2-manifesto.mp4")
 
-  private lateinit var playable: Playable
+  private val playable: Playable by lazy {
+    Toro.with(this).setUp(videoUri).repeatMode(Player.REPEAT_MODE_ONE)
+        .config(DemoApp.config)
+        .tag("Player:Material").asPlayable()
+  }
 
   private val mOnNavigationItemSelectedListener = BottomNavigationView.OnNavigationItemSelectedListener { item ->
     val oldValue = checkedNav.getAndSet(item.itemId)
@@ -72,9 +77,6 @@ class MainActivity : AppCompatActivity(), PlayableProvider {
     fragments.put(R.id.navigation_home, RecyclerViewFragment.newInstance())
     fragments.put(R.id.navigation_dashboard, ScrollViewFragment.newInstance())
     fragments.put(R.id.navigation_notifications, ScrollViewFragment.newInstance())
-
-    val tag = "Player:Material"
-    playable = Toro.with(this).setUp(videoUri).tag(tag).asPlayable()
   }
 
   override fun requirePlayable(): Playable {

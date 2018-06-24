@@ -23,7 +23,6 @@ import android.support.annotation.CallSuper;
 import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.ToroUtil;
 import java.lang.annotation.Retention;
@@ -40,8 +39,6 @@ import java.util.HashSet;
  */
 @SuppressWarnings("WeakerAccess") //
 public abstract class Playback<T> {
-
-  protected String TAG;
 
   public static class Token implements Comparable<Token> {
 
@@ -70,7 +67,6 @@ public abstract class Playback<T> {
 
   protected final Handler handler = new Handler(new Handler.Callback() {
     @Override public boolean handleMessage(Message msg) {
-      Log.i(TAG, "handleMessage() called with: msg = [" + msg + "]");
       boolean playWhenReady = (boolean) msg.obj;
       switch (msg.what) {
         case State.STATE_IDLE:
@@ -121,7 +117,6 @@ public abstract class Playback<T> {
         : new RequestWeakReference<>(this, target, manager.toro.referenceQueue);
     this.tag = (options.tag != null ? options.tag : this);
     this.options = options;
-    TAG = "Toro:Playable@" + playable.hashCode();
   }
 
   // Used by subclasses to dispatch internal event listeners
@@ -167,10 +162,16 @@ public abstract class Playback<T> {
     return this.tag != this;
   }
 
-  void pause() {
-    if (this.manager.playablesThisActiveTo.contains(playable)) {
-      playable.pause();
+  void onPause(boolean managerRecreating) {
+    if (!managerRecreating) {
+      if (this.manager.playablesThisActiveTo.contains(playable)) {
+        playable.pause();
+      }
     }
+  }
+
+  void onPlay() {
+    playable.play();
   }
 
   // being added to Manager

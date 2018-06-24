@@ -18,7 +18,6 @@ package toro.v4;
 
 import android.app.Application;
 import android.net.Uri;
-import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import com.google.android.exoplayer2.Player;
@@ -26,8 +25,6 @@ import com.google.android.exoplayer2.ui.PlayerView;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.exoplayer.Config;
 import im.ene.toro.media.PlaybackInfo;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 
 /**
  * Re-usable object. Once created, will live with {@link Application} lifecycle.
@@ -54,15 +51,6 @@ import java.lang.annotation.RetentionPolicy;
  * @since 4.0.0.2800
  */
 public interface Playable {
-
-  // Reasons for a pausing.
-  @Retention(RetentionPolicy.SOURCE)  //
-  @IntDef({ Reason.REASON_UNKNOWN, Reason.REASON_DETACHED, Reason.REASON_BAD_TOKEN })  //
-  @interface Reason {
-    int REASON_UNKNOWN = 0;
-    int REASON_DETACHED = 1;
-    int REASON_BAD_TOKEN = 2;
-  }
 
   final class Bundle {
     @NonNull final Uri uri;
@@ -99,7 +87,7 @@ public interface Playable {
       this.repeatMode = options.repeatMode;
     }
 
-    @NonNull Config config = new Config.Builder().build();
+    @NonNull Config config = Config.DEFAULT;
     @NonNull PlaybackInfo playbackInfo = PlaybackInfo.SCRAP;
     @Nullable String mediaType = null;
     @Nullable Object tag = null;
@@ -129,11 +117,11 @@ public interface Playable {
 
   final class Builder {
 
-    final Toro toro;
+    @NonNull final Toro toro;
     @NonNull final Uri uri;
-    final Options options = new Options();
+    @NonNull final Options options = new Options();
 
-    public Builder(Toro toro, @NonNull Uri uri) {
+    public Builder(@NonNull Toro toro, @NonNull Uri uri) {
       this.toro = toro;
       this.uri = uri;
     }
@@ -192,10 +180,6 @@ public interface Playable {
   void pause();
 
   void release();
-
-  void prepare(boolean alwaysLoad);
-
-  boolean isPlaying();
 
   /// TODO consider if we need these methods
   void setPlaybackInfo(@NonNull PlaybackInfo playbackInfo);

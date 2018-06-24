@@ -44,6 +44,8 @@ import static im.ene.toro.ToroUtil.checkNotNull;
 @SuppressWarnings("SimplifiableIfStatement")  //
 public final class Config {
 
+  public static final Config DEFAULT = new Builder().build();
+
   // primitive flags
   @ExtensionRendererMode final int extensionMode;
 

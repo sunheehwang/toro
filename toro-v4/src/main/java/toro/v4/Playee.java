@@ -18,7 +18,6 @@ package toro.v4;
 
 import android.net.Uri;
 import android.support.annotation.NonNull;
-import android.util.Log;
 import com.google.android.exoplayer2.ui.PlayerView;
 import im.ene.toro.ToroPlayer;
 import im.ene.toro.ToroUtil;
@@ -31,12 +30,10 @@ import im.ene.toro.media.PlaybackInfo;
  */
 final class Playee implements Playable, Playback.Callback {
 
-  private String TAG = "Toro:Playable@" + hashCode();
-
-  private final Toro toro;
-  private final Uri uri;
-  private final Playable.Options options;
-  private final Bundle bundle;
+  @NonNull private final Toro toro;
+  @NonNull private final Uri uri;
+  @NonNull private final Playable.Options options;
+  @NonNull private final Bundle bundle;
 
   private im.ene.toro.exoplayer.Playable helper;
   private im.ene.toro.exoplayer.Playable.EventListener listener;
@@ -113,7 +110,6 @@ final class Playee implements Playable, Playback.Callback {
   }
 
   @Override public void play() {
-    Log.w(TAG, "play() called");
     this.helper.play();
   }
 
@@ -127,14 +123,6 @@ final class Playee implements Playable, Playback.Callback {
     if (this.options.tag != null) {
       toro.playablePacks.remove(this.options.tag.toString());
     }
-  }
-
-  @Override public void prepare(boolean alwaysLoad) {
-    this.helper.prepare(alwaysLoad);
-  }
-
-  @Override public boolean isPlaying() {
-    return this.helper.isPlaying();
   }
 
   @Override public void setPlaybackInfo(@NonNull PlaybackInfo playbackInfo) {
