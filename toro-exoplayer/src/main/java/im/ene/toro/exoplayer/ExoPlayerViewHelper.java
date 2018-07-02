@@ -40,7 +40,7 @@ import static im.ene.toro.exoplayer.ToroExo.with;
 
 public class ExoPlayerViewHelper extends ToroPlayerHelper {
 
-  @NonNull private final ExoPlayable playable;
+  @NonNull public final ExoPlayable playable;
   @NonNull private final MyEventListeners listeners;
 
   // Container is no longer required for constructing new instance.

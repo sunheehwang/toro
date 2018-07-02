@@ -24,6 +24,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import im.ene.toro.ToroPlayer
 import im.ene.toro.exoplayer.ExoCreator
 import toro.pixabay.R
 import toro.pixabay.common.NetworkState
@@ -83,7 +84,7 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
     val view = inflater!!.inflate(viewType, parent, false)
     return when (viewType) {
       R.layout.holder_photo_item -> PhotoItemViewHolder(view,
-          ViewHolderListenerImpl(fragment, this))
+          PhotoViewListenerImpl(fragment, this))
       R.layout.holder_video_item -> VideoItemViewHolder(view, creator)
       R.layout.holder_loading -> LoadingViewHolder(view)
       else -> throw IllegalArgumentException("unknown view type $viewType")
@@ -120,7 +121,7 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
   /**
    * A listener that is attached to all ViewHolders to handle image loading events and clicks.
    */
-  interface ViewHolderListener {
+  interface PhotoViewListener {
 
     fun onLoadCompleted(view: ImageView, adapterPosition: Int)
 
@@ -128,11 +129,11 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
   }
 
   /**
-   * Default [ViewHolderListener] implementation.
+   * Default [PhotoViewListener] implementation.
    */
-  private class ViewHolderListenerImpl(
+  private class PhotoViewListenerImpl(
       private val fragment: Fragment,
-      private val adapter: MainAdapter) : ViewHolderListener {
+      private val adapter: MainAdapter) : PhotoViewListener {
     private val enterTransitionStarted: AtomicBoolean = AtomicBoolean()
 
     override fun onLoadCompleted(view: ImageView, adapterPosition: Int) {
@@ -174,4 +175,5 @@ class MainAdapter(private val creator: ExoCreator, private val fragment: Fragmen
           .commit()
     }
   }
+
 }

@@ -26,16 +26,15 @@ import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
-import com.google.android.exoplayer2.ui.AspectRatioFrameLayout
 import toro.pixabay.R
 import toro.pixabay.data.entity.PhotoItem
-import toro.pixabay.ui.main.MainAdapter.ViewHolderListener
+import toro.pixabay.ui.main.MainAdapter.PhotoViewListener
 
 /**
  * @author eneim (2018/05/11).
  */
-class PhotoItemViewHolder(val view: View, val listener: ViewHolderListener) : BaseViewHolder(
-    view), OnClickListener {
+class PhotoItemViewHolder(val view: View, val listener: PhotoViewListener) : BaseViewHolder(view),
+    OnClickListener {
   val imageView = itemView.findViewById<ImageView>(R.id.imageView)!!
 
   init {
