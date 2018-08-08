@@ -33,6 +33,7 @@ import im.ene.toro.sample.R;
 import im.ene.toro.sample.basic.BasicListActivity;
 import im.ene.toro.sample.common.BaseFragment;
 import im.ene.toro.sample.complex.ComplexListActivity;
+import im.ene.toro.sample.custom.CustomLayoutActivity;
 import im.ene.toro.sample.facebook.FacebookDemoActivity;
 import im.ene.toro.sample.flexible.FlexibleListActivity;
 import im.ene.toro.sample.legacy.LegacyDemoActivity;
@@ -148,7 +149,7 @@ public class IntroFragment extends BaseFragment {
     COMPLEX("Complicated Grid Demo", ComplexListActivity.class),  //
     FLEXIBLE("Flexible Grid Demo", FlexibleListActivity.class),  //
     MANY_PAGERS("ViewPagers in ViewPager Demo", ManyPagersActivity.class),  //
-    // CUSTOM("Custom Layout Demo", CustomLayoutActivity.class),  // This is the launch Activity
+    CUSTOM("Custom Layout Demo", CustomLayoutActivity.class),  // This is the launch Activity
     LEGACY("Legacy VideoView Demo", LegacyDemoActivity.class) //
     ;
     private final String title;

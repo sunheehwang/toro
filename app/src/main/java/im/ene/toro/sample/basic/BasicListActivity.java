@@ -18,6 +18,11 @@ package im.ene.toro.sample.basic;
 
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SnapHelper;
+import android.support.v7.widget.LinearSnapHelper;
+import android.view.View;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import im.ene.toro.sample.R;
@@ -30,24 +35,62 @@ import im.ene.toro.widget.Container;
 
 public class BasicListActivity extends BaseActivity {
 
-  @BindView(R.id.player_container) Container container;
-  LinearLayoutManager layoutManager;
-  BasicListAdapter adapter;
+    @BindView(R.id.player_container)
+    Container container;
+    LinearLayoutManager layoutManager;
+    BasicListAdapter adapter;
 
-  @Override protected void onCreate(Bundle savedInstanceState) {
-    super.onCreate(savedInstanceState);
-    setContentView(R.layout.fragment_basic);
-    ButterKnife.bind(this);
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.fragment_basic);
+        ButterKnife.bind(this);
 
-    layoutManager = new LinearLayoutManager(this);
-    container.setLayoutManager(layoutManager);
-    adapter = new BasicListAdapter();
-    container.setAdapter(adapter);
-  }
+        layoutManager = new LinearLayoutManager(this);
+        container.setLayoutManager(layoutManager);
+        adapter = new BasicListAdapter();
+        container.setAdapter(adapter);
 
-  @Override protected void onDestroy() {
-    layoutManager = null;
-    adapter = null;
-    super.onDestroy();
-  }
+
+        //SnapHelper helper = new LinearSnapHelper();
+        SnapHelper helper = new LinearSnapHelper() {
+            @Override
+            public int findTargetSnapPosition(RecyclerView.LayoutManager layoutManager, int velocityX, int velocityY) {
+                View centerView = findSnapView(layoutManager);
+                if (centerView == null)
+                    return RecyclerView.NO_POSITION;
+
+                int position = layoutManager.getPosition(centerView);
+                int targetPosition = -1;
+                if (layoutManager.canScrollHorizontally()) {
+                    if (velocityX < 0) {
+                        targetPosition = position - 1;
+                    } else {
+                        targetPosition = position + 1;
+                    }
+                }
+
+                if (layoutManager.canScrollVertically()) {
+                    if (velocityY < 0) {
+                        targetPosition = position - 1;
+                    } else {
+                        targetPosition = position + 1;
+                    }
+                }
+
+                final int firstItem = 0;
+                final int lastItem = layoutManager.getItemCount() - 1;
+                targetPosition = Math.min(lastItem, Math.max(targetPosition, firstItem));
+                return targetPosition;
+            }
+        };
+        helper.attachToRecyclerView(container);
+    }
+
+    @Override
+    protected void onDestroy() {
+        layoutManager = null;
+        adapter = null;
+        super.onDestroy();
+    }
 }

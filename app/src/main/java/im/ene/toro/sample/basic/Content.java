@@ -28,7 +28,8 @@ public class Content {
   private static final String MP4_TOS = "file:///android_asset/tos.mp4";
   private static final String MP4_COSMOS = "file:///android_asset/cosmos.mp4";
 
-  static final String[] ITEMS = { MP4_TOS, MP4_BUNNY, MP4_COSMOS };
+  static final String[] ITEMS = { "http://qthttp.apple.com.edgesuite.net/1010qwoeiuryfg/sl.m3u8", "https://commondatastorage.googleapis.com/gtv-videos-bucket/CastVideos/hls/TearsOfSteel.m3u8", "https://html5demos.com/assets/dizzy.mp4" };
+  //static final String[] ITEMS = { MP4_TOS, MP4_BUNNY, MP4_COSMOS };
 
   public static class Media {
     public final int index;

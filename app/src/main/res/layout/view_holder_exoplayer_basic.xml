@@ -19,7 +19,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
+    android:layout_height="match_parent"
     android:layout_marginTop="8dp"
     app:cardBackgroundColor="@color/cardview_light_background"
     app:cardCornerRadius="0dp"
@@ -29,7 +29,7 @@
   <com.google.android.exoplayer2.ui.PlayerView
       android:id="@+id/player"
       android:layout_width="match_parent"
-      android:layout_height="wrap_content"
+      android:layout_height="match_parent"
       android:minHeight="@dimen/video_min_height"
       app:resize_mode="fixed_height"
       app:surface_type="texture_view"
